@@ -75,11 +75,11 @@ class _MainNavigationState extends State<MainNavigation> {
 
   // List of screens - using real screens now
   final List<Widget> _screens = [
-    const DashboardPlaceholder(),
+    const DashboardScreen(),
     const ClosetScreen(),
-    const LaundryPlaceholder(),
-    const OutfitPlaceholder(),
-    const HistoryPlaceholder(),
+    const LaundryScreen(),
+    const OutfitScreen(),
+    const HistoryScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -126,116 +126,6 @@ class _MainNavigationState extends State<MainNavigation> {
             selectedIcon: Icon(_selectedIcons[4]),
             label: _screenTitles[4],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ===== PLACEHOLDER SCREENS (Replace these as you build real screens) =====
-
-class DashboardPlaceholder extends StatelessWidget {
-  const DashboardPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.home,
-            size: 64,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Dashboard Screen',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text('Replace with DashboardScreen'),
-        ],
-      ),
-    );
-  }
-}
-
-class LaundryPlaceholder extends StatelessWidget {
-  const LaundryPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.local_laundry_service,
-            size: 64,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Laundry Screen',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text('Replace with LaundryScreen'),
-        ],
-      ),
-    );
-  }
-}
-
-class OutfitPlaceholder extends StatelessWidget {
-  const OutfitPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.style,
-            size: 64,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Outfit Screen',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text('Replace with OutfitScreen'),
-        ],
-      ),
-    );
-  }
-}
-
-class HistoryPlaceholder extends StatelessWidget {
-  const HistoryPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.history,
-            size: 64,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'History Screen',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text('Replace with HistoryScreen'),
         ],
       ),
     );
