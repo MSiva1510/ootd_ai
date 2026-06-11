@@ -1,69 +1,162 @@
 import 'package:ootd_ai/models/clothing_item.dart';
 
+/// Service for managing clothing items in the wardrobe
 class ClothingService {
-  // In a real app, this would use a database or API
+  /// Singleton instance
   static final ClothingService _instance = ClothingService._internal();
 
-  final List<ClothingItem> _items = [];
+  /// Private list to store clothing items
+  late List<ClothingItem> _clothingList;
 
+  /// Private constructor
+  ClothingService._internal() {
+    _initializeDummyData();
+  }
+
+  /// Factory constructor to return singleton instance
   factory ClothingService() {
     return _instance;
   }
 
-  ClothingService._internal();
-
-  // Get all clothing items
-  List<ClothingItem> getAllItems() {
-    return _items;
+  /// Initialize dummy clothing data
+  void _initializeDummyData() {
+    _clothingList = [
+      ClothingItem(
+        id: '1',
+        name: 'Blue Formal Shirt',
+        category: 'Shirt',
+        color: 'Blue',
+        status: 'Available',
+        dateAdded: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      ClothingItem(
+        id: '2',
+        name: 'White T-Shirt',
+        category: 'T-Shirt',
+        color: 'White',
+        status: 'Available',
+        dateAdded: DateTime.now().subtract(const Duration(days: 15)),
+      ),
+      ClothingItem(
+        id: '3',
+        name: 'Black Jeans',
+        category: 'Jeans',
+        color: 'Black',
+        status: 'In Laundry',
+        dateAdded: DateTime.now().subtract(const Duration(days: 45)),
+      ),
+      ClothingItem(
+        id: '4',
+        name: 'Khaki Pant',
+        category: 'Pant',
+        color: 'Khaki',
+        status: 'Available',
+        dateAdded: DateTime.now().subtract(const Duration(days: 20)),
+      ),
+      ClothingItem(
+        id: '5',
+        name: 'White Sneakers',
+        category: 'Shoe',
+        color: 'White',
+        status: 'Available',
+        dateAdded: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+      ClothingItem(
+        id: '6',
+        name: 'Brown Sandals',
+        category: 'Sandal',
+        color: 'Brown',
+        status: 'Available',
+        dateAdded: DateTime.now().subtract(const Duration(days: 10)),
+      ),
+    ];
   }
 
-  // Get items by category
-  List<ClothingItem> getItemsByCategory(String category) {
-    return _items.where((item) => item.category == category).toList();
+  /// Get all clothing items
+  List<ClothingItem> getAllClothes() {
+    return List.from(_clothingList);
   }
 
-  // Add a new clothing item
-  Future<void> addItem(ClothingItem item) async {
-    _items.add(item);
-    // TODO: Persist to database
-  }
-
-  // Update a clothing item
-  Future<void> updateItem(ClothingItem item) async {
-    final index = _items.indexWhere((i) => i.id == item.id);
-    if (index != -1) {
-      _items[index] = item;
-      // TODO: Persist to database
-    }
-  }
-
-  // Delete a clothing item
-  Future<void> deleteItem(String id) async {
-    _items.removeWhere((item) => item.id == id);
-    // TODO: Persist to database
-  }
-
-  // Search items
-  List<ClothingItem> searchItems(String query) {
-    return _items
-        .where((item) =>
-            item.name.toLowerCase().contains(query.toLowerCase()) ||
-            item.color.toLowerCase().contains(query.toLowerCase()) ||
-            item.tags.any((tag) => tag.toLowerCase().contains(query.toLowerCase())))
+  /// Get only available clothing items
+  List<ClothingItem> getAvailableClothes() {
+    return _clothingList
+        .where((item) => item.status == 'Available')
         .toList();
   }
 
-  // Get statistics
-  Map<String, int> getCategoryStats() {
-    final Map<String, int> stats = {};
-    for (var item in _items) {
-      stats[item.category] = (stats[item.category] ?? 0) + 1;
-    }
-    return stats;
+  /// Get clothing items by category
+  List<ClothingItem> getByCategory(String category) {
+    return _clothingList
+        .where((item) => item.category == category)
+        .toList();
   }
 
-  // Clear all items (for testing)
+  /// Get clothing items by status
+  List<ClothingItem> getByStatus(String status) {
+    return _clothingList
+        .where((item) => item.status == status)
+        .toList();
+  }
+
+  /// Get clothing item by id
+  ClothingItem? getById(String id) {
+    try {
+      return _clothingList.firstWhere((item) => item.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Add a new clothing item
+  void addClothingItem(ClothingItem item) {
+    _clothingList.add(item);
+  }
+
+  /// Update an existing clothing item
+  bool updateClothingItem(ClothingItem item) {
+    final index = _clothingList.indexWhere((cloth) => cloth.id == item.id);
+    if (index != -1) {
+      _clothingList[index] = item;
+      return true;
+    }
+    return false;
+  }
+
+  /// Delete a clothing item by id
+  bool deleteClothingItem(String id) {
+    final initialLength = _clothingList.length;
+    _clothingList.removeWhere((item) => item.id == id);
+    return _clothingList.length < initialLength;
+  }
+
+  /// Get total number of clothing items
+  int getTotalCount() {
+    return _clothingList.length;
+  }
+
+  /// Get count of available items
+  int getAvailableCount() {
+    return getAvailableClothes().length;
+  }
+
+  /// Get count by category
+  Map<String, int> getCategoryCount() {
+    final Map<String, int> categoryCount = {};
+    for (var item in _clothingList) {
+      categoryCount[item.category] =
+          (categoryCount[item.category] ?? 0) + 1;
+    }
+    return categoryCount;
+  }
+
+  /// Clear all clothing items
   void clearAll() {
-    _items.clear();
+    _clothingList.clear();
+  }
+
+  /// Reset to dummy data
+  void resetDummyData() {
+    _clothingList.clear();
+    _initializeDummyData();
   }
 }

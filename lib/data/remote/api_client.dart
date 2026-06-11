@@ -108,17 +108,6 @@ class ApiClient {
     }
   }
 
-  /// Handle API response
-  dynamic _handleResponse(dynamic response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response.data;
-    } else {
-      throw ApiException(
-        message: response.statusMessage ?? 'Unknown error',
-        statusCode: response.statusCode,
-      );
-    }
-  }
 
   /// Upload file
   Future<dynamic> uploadFile(

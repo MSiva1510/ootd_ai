@@ -95,9 +95,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final favoriteOutfits =
         outfits.where((o) => o.isFavorite).length;
     final averageRating = outfits.isEmpty
-        ? 0.0
-        : outfits.fold<int>(0, (sum, o) => sum + o.ratings) /
-            totalOutfits;
+    ? 0.0
+    : outfits.fold(
+        0.0,
+        (sum, o) => sum + o.ratings.toDouble(),
+      ) /
+      totalOutfits;
 
     return Card(
       child: Padding(

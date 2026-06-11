@@ -88,7 +88,7 @@ extension DateTimeExtension on DateTime {
   /// Get time until (for future dates)
   String getTimeUntil() {
     final now = DateTime.now();
-    final difference = difference = this.difference(now);
+    final difference = this.difference(now);
 
     if (difference.inSeconds < 0) return 'Overdue';
     if (difference.inSeconds < 60) return 'In ${difference.inSeconds}s';

@@ -16,7 +16,6 @@ class _LaundryScreenState extends State<LaundryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final stats = _laundryService.getStats();
 
     return Scaffold(

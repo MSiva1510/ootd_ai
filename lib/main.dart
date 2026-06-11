@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:ootd_ai/screens/closet/closet_screen.dart';
+import 'package:ootd_ai/screens/dashboard/dashboard_screen.dart';
+import 'package:ootd_ai/screens/laundry/laundry_screen.dart';
+import 'package:ootd_ai/screens/outfit/outfit_screen.dart';
+import 'package:ootd_ai/screens/history/history_screen.dart';
 
 void main() {
   runApp(const OOTDAIApp());
 }
 
 class OOTDAIApp extends StatelessWidget {
-  const OOTDAIApp({super.key});
+  const OOTDAIApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +40,7 @@ class OOTDAIApp extends StatelessWidget {
 }
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  const MainNavigation({Key? key}) : super(key: key);
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -68,6 +73,15 @@ class _MainNavigationState extends State<MainNavigation> {
     Icons.history,
   ];
 
+  // List of screens - using real screens now
+  final List<Widget> _screens = [
+    const DashboardPlaceholder(),
+    const ClosetScreen(),
+    const LaundryPlaceholder(),
+    const OutfitPlaceholder(),
+    const HistoryPlaceholder(),
+  ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -82,7 +96,7 @@ class _MainNavigationState extends State<MainNavigation> {
         centerTitle: true,
         elevation: 0,
       ),
-      body: _buildScreen(_selectedIndex),
+      body: _screens[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
@@ -116,29 +130,12 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
     );
   }
-
-  Widget _buildScreen(int index) {
-    switch (index) {
-      case 0:
-        return const DashboardPlaceholder();
-      case 1:
-        return const ClosetPlaceholder();
-      case 2:
-        return const LaundryPlaceholder();
-      case 3:
-        return const OutfitPlaceholder();
-      case 4:
-        return const HistoryPlaceholder();
-      default:
-        return const DashboardPlaceholder();
-    }
-  }
 }
 
-// ===== PLACEHOLDER SCREENS (Replace with actual screens) =====
+// ===== PLACEHOLDER SCREENS (Replace these as you build real screens) =====
 
 class DashboardPlaceholder extends StatelessWidget {
-  const DashboardPlaceholder({super.key});
+  const DashboardPlaceholder({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -157,34 +154,7 @@ class DashboardPlaceholder extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          const Text('Replace with DashboardScreen'),
-        ],
-      ),
-    );
-  }
-}
-
-class ClosetPlaceholder extends StatelessWidget {
-  const ClosetPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.checkroom,
-            size: 64,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Closet Screen',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          const Text('Replace with ClosetScreen'),
+          Text('Replace with DashboardScreen'),
         ],
       ),
     );
@@ -192,7 +162,7 @@ class ClosetPlaceholder extends StatelessWidget {
 }
 
 class LaundryPlaceholder extends StatelessWidget {
-  const LaundryPlaceholder({super.key});
+  const LaundryPlaceholder({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +181,7 @@ class LaundryPlaceholder extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          const Text('Replace with LaundryScreen'),
+          Text('Replace with LaundryScreen'),
         ],
       ),
     );
@@ -219,7 +189,7 @@ class LaundryPlaceholder extends StatelessWidget {
 }
 
 class OutfitPlaceholder extends StatelessWidget {
-  const OutfitPlaceholder({super.key});
+  const OutfitPlaceholder({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -238,7 +208,7 @@ class OutfitPlaceholder extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          const Text('Replace with OutfitScreen'),
+          Text('Replace with OutfitScreen'),
         ],
       ),
     );
@@ -246,7 +216,7 @@ class OutfitPlaceholder extends StatelessWidget {
 }
 
 class HistoryPlaceholder extends StatelessWidget {
-  const HistoryPlaceholder({super.key});
+  const HistoryPlaceholder({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +235,7 @@ class HistoryPlaceholder extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          const Text('Replace with HistoryScreen'),
+          Text('Replace with HistoryScreen'),
         ],
       ),
     );

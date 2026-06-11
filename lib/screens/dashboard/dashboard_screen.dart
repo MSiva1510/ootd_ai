@@ -3,6 +3,9 @@ import 'package:ootd_ai/services/clothing_service.dart';
 import 'package:ootd_ai/services/outfit_service.dart';
 import 'package:ootd_ai/services/laundry_service.dart';
 import 'package:ootd_ai/widgets/stat_card.dart';
+// ignore: unused_import
+import 'package:ootd_ai/models/clothing_item.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -111,7 +114,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 StatCard(
                   title: 'Clothing Items',
-                  value: _clothingService.getAllItems().length.toString(),
+                  value: _clothingService.getAllClothes().length.toString(),
                   icon: Icons.checkroom,
                 ),
                 StatCard(
