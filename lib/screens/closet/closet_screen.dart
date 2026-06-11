@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:ootd_ai/models/clothing_item.dart';
 import 'package:ootd_ai/services/clothing_service.dart';
+import 'package:ootd_ai/models/clothing_item.dart';
+import 'package:ootd_ai/screens/closet/add_clothing_screen.dart';
 
 /// Closet screen for managing clothing items
 class ClosetScreen extends StatefulWidget {
-  const ClosetScreen({super.key});
+  const ClosetScreen({Key? key}) : super(key: key);
 
   @override
   State<ClosetScreen> createState() => _ClosetScreenState();
@@ -28,14 +29,19 @@ class _ClosetScreenState extends State<ClosetScreen> {
     });
   }
 
-  /// Handle add clothing button press
-  void _onAddClothingPressed() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Add Clothing Screen Coming Soon'),
-        duration: Duration(seconds: 2),
+  /// Navigate to Add Clothing Screen
+  void _onAddClothingPressed() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddClothingScreen(),
       ),
     );
+
+    // If item was added, refresh the list
+    if (result == true) {
+      _loadClothingItems();
+    }
   }
 
   /// Get status color based on status string
@@ -256,7 +262,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
                   end: Alignment.bottomRight,
                   colors: [
                     _getColorFromString(item.color),
-                    _getColorFromString(item.color).withValues(alpha: 0.7),
+                    _getColorFromString(item.color).withOpacity(0.7),
                   ],
                 ),
               ),
@@ -309,7 +315,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
                         horizontal: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.2),
+                        color: statusColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -423,18 +429,14 @@ class _ClosetScreenState extends State<ClosetScreen> {
     switch (category) {
       case 'Shirt':
       case 'T-Shirt':
-        return Icons.checkroom;
       case 'Pant':
       case 'Jeans':
-        return Icons.checkroom;
       case 'Shoe':
       case 'Sandal':
       case 'Chappal':
-        return Icons.shopping_bag;
+        return Icons.checkroom;
       default:
         return Icons.checkroom;
     }
   }
 }
-
-

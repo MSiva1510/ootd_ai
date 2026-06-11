@@ -10,7 +10,7 @@ void main() {
 }
 
 class OOTDAIApp extends StatelessWidget {
-  const OOTDAIApp({Key? key}) : super(key: key);
+  const OOTDAIApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class OOTDAIApp extends StatelessWidget {
 }
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({Key? key}) : super(key: key);
+  const MainNavigation({super.key});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -135,7 +135,7 @@ class _MainNavigationState extends State<MainNavigation> {
 // ===== PLACEHOLDER SCREENS (Replace these as you build real screens) =====
 
 class DashboardPlaceholder extends StatelessWidget {
-  const DashboardPlaceholder({Key? key}) : super(key: key);
+  const DashboardPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +162,7 @@ class DashboardPlaceholder extends StatelessWidget {
 }
 
 class LaundryPlaceholder extends StatelessWidget {
-  const LaundryPlaceholder({Key? key}) : super(key: key);
+  const LaundryPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +189,7 @@ class LaundryPlaceholder extends StatelessWidget {
 }
 
 class OutfitPlaceholder extends StatelessWidget {
-  const OutfitPlaceholder({Key? key}) : super(key: key);
+  const OutfitPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +216,7 @@ class OutfitPlaceholder extends StatelessWidget {
 }
 
 class HistoryPlaceholder extends StatelessWidget {
-  const HistoryPlaceholder({Key? key}) : super(key: key);
+  const HistoryPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {

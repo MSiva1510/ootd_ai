@@ -108,8 +108,23 @@ class ClothingService {
   }
 
   /// Add a new clothing item
-  void addClothingItem(ClothingItem item) {
-    _clothingList.add(item);
+  /// 
+  /// This method adds a new clothing item to the wardrobe.
+  /// The item is added to the in-memory list.
+  /// 
+  /// Returns true if the item was added successfully.
+  bool addClothing(ClothingItem item) {
+    try {
+      _clothingList.add(item);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Add a new clothing item (alias for addClothing)
+  bool addClothingItem(ClothingItem item) {
+    return addClothing(item);
   }
 
   /// Update an existing clothing item
