@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ootd_ai/config/theme/theme_controller.dart';
 import 'package:ootd_ai/services/clothing_service.dart';
 import 'package:ootd_ai/services/outfit_service.dart';
 import 'package:ootd_ai/services/laundry_service.dart';
@@ -8,7 +9,9 @@ import 'package:ootd_ai/models/clothing_item.dart';
 
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final ThemeController themeController;
+
+  const DashboardScreen({super.key, required this.themeController});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -26,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('OOTD AI'),
-        centerTitle: true,
+        centerTitle: false,
         elevation: 0,
         actions: [
           IconButton(
@@ -37,13 +40,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings coming soon')),
-              );
+          PopupMenuButton<ThemeMode>(
+            icon: Icon(_themeIcon(widget.themeController.themeMode)),
+            tooltip: 'Theme',
+            onSelected: (mode) {
+              widget.themeController.setThemeMode(mode);
             },
+            itemBuilder: (context) => [
+              _buildThemeMenuItem(
+                ThemeMode.light,
+                Icons.light_mode_outlined,
+                'Light',
+              ),
+              _buildThemeMenuItem(
+                ThemeMode.dark,
+                Icons.dark_mode_outlined,
+                'Dark',
+              ),
+              _buildThemeMenuItem(
+                ThemeMode.system,
+                Icons.brightness_auto_outlined,
+                'System',
+              ),
+            ],
           ),
         ],
       ),
@@ -216,6 +235,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Icon representing the current theme mode
+  IconData _themeIcon(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return Icons.light_mode_outlined;
+      case ThemeMode.dark:
+        return Icons.dark_mode_outlined;
+      case ThemeMode.system:
+        return Icons.brightness_auto_outlined;
+    }
+  }
+
+  /// Build a theme selection menu item with a check mark for the active mode
+  PopupMenuItem<ThemeMode> _buildThemeMenuItem(
+    ThemeMode mode,
+    IconData icon,
+    String label,
+  ) {
+    final isSelected = widget.themeController.themeMode == mode;
+    return PopupMenuItem<ThemeMode>(
+      value: mode,
+      child: Row(
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 12),
+          Text(label),
+          const Spacer(),
+          if (isSelected)
+            Icon(
+              Icons.check,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+        ],
       ),
     );
   }

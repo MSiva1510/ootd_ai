@@ -76,7 +76,7 @@ class _AddClothingScreenState extends State<AddClothingScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Clothing Item'),
-        centerTitle: true,
+        centerTitle: false,
         elevation: 0,
       ),
       body: SingleChildScrollView(

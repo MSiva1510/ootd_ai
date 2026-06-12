@@ -4,7 +4,7 @@ import 'package:ootd_ai/models/clothing_item.dart';
 
 /// Laundry screen for tracking items in laundry
 class LaundryScreen extends StatefulWidget {
-  const LaundryScreen({Key? key}) : super(key: key);
+  const LaundryScreen({super.key});
 
   @override
   State<LaundryScreen> createState() => _LaundryScreenState();
@@ -51,7 +51,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
       appBar: AppBar(
         title: const Text('Laundry'),
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         actions: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -180,7 +180,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
             Container(
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -241,7 +241,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.2),
+                    color: Colors.orange.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -282,10 +282,10 @@ class _LaundryScreenState extends State<LaundryScreen> {
             Container(
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.orange.withOpacity(0.3),
+                  color: Colors.orange.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -359,7 +359,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                                       ? Colors.green
                                       : Colors.orange,
                                   backgroundColor:
-                                      Colors.grey.withOpacity(0.2),
+                                      Colors.grey.withValues(alpha: 0.2),
                                 ),
                               ),
                               Text(
@@ -391,7 +391,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                 child: FilledButton.tonal(
                   onPressed: () => _markAsAvailable(item.id, item.name),
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green.withOpacity(0.2),
+                    backgroundColor: Colors.green.withValues(alpha: 0.2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -410,7 +410,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ootd_ai/config/theme/app_theme.dart';
+import 'package:ootd_ai/config/theme/theme_controller.dart';
 import 'package:ootd_ai/screens/closet/closet_screen.dart';
 import 'package:ootd_ai/screens/dashboard/dashboard_screen.dart';
 import 'package:ootd_ai/screens/laundry/laundry_screen.dart';
@@ -9,38 +11,50 @@ void main() {
   runApp(const OOTDAIApp());
 }
 
-class OOTDAIApp extends StatelessWidget {
+class OOTDAIApp extends StatefulWidget {
   const OOTDAIApp({super.key});
+
+  @override
+  State<OOTDAIApp> createState() => _OOTDAIAppState();
+}
+
+class _OOTDAIAppState extends State<OOTDAIApp> {
+  final ThemeController _themeController = ThemeController();
+
+  @override
+  void initState() {
+    super.initState();
+    _themeController.addListener(_onThemeChanged);
+    _themeController.load();
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _themeController.removeListener(_onThemeChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'OOTD AI',
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1),
-          brightness: Brightness.light,
-        ),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1),
-          brightness: Brightness.dark,
-        ),
-      ),
-      themeMode: ThemeMode.system,
-      home: const MainNavigation(),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: _themeController.themeMode,
+      home: MainNavigation(themeController: _themeController),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  final ThemeController themeController;
+
+  const MainNavigation({super.key, required this.themeController});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -73,9 +87,8 @@ class _MainNavigationState extends State<MainNavigation> {
     Icons.history,
   ];
 
-  // List of screens - using real screens now
-  final List<Widget> _screens = [
-    const DashboardScreen(),
+  late final List<Widget> _screens = [
+    DashboardScreen(themeController: widget.themeController),
     const ClosetScreen(),
     const LaundryScreen(),
     const OutfitScreen(),
@@ -91,42 +104,20 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_screenTitles[_selectedIndex]),
-        centerTitle: true,
-        elevation: 0,
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
       ),
-      body: _screens[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
-        destinations: <NavigationDestination>[
-          NavigationDestination(
-            icon: Icon(_icons[0]),
-            selectedIcon: Icon(_selectedIcons[0]),
-            label: _screenTitles[0],
-          ),
-          NavigationDestination(
-            icon: Icon(_icons[1]),
-            selectedIcon: Icon(_selectedIcons[1]),
-            label: _screenTitles[1],
-          ),
-          NavigationDestination(
-            icon: Icon(_icons[2]),
-            selectedIcon: Icon(_selectedIcons[2]),
-            label: _screenTitles[2],
-          ),
-          NavigationDestination(
-            icon: Icon(_icons[3]),
-            selectedIcon: Icon(_selectedIcons[3]),
-            label: _screenTitles[3],
-          ),
-          NavigationDestination(
-            icon: Icon(_icons[4]),
-            selectedIcon: Icon(_selectedIcons[4]),
-            label: _screenTitles[4],
-          ),
-        ],
+        destinations: List.generate(_screenTitles.length, (i) {
+          return NavigationDestination(
+            icon: Icon(_icons[i]),
+            selectedIcon: Icon(_selectedIcons[i]),
+            label: _screenTitles[i],
+          );
+        }),
       ),
     );
   }

@@ -5,7 +5,7 @@ import 'package:ootd_ai/screens/closet/add_clothing_screen.dart';
 
 /// Closet screen for managing clothing items
 class ClosetScreen extends StatefulWidget {
-  const ClosetScreen({Key? key}) : super(key: key);
+  const ClosetScreen({super.key});
 
   @override
   State<ClosetScreen> createState() => _ClosetScreenState();
@@ -83,7 +83,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
       appBar: AppBar(
         title: const Text('My Closet'),
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         actions: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -289,7 +289,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
                   end: Alignment.bottomRight,
                   colors: [
                     _getColorFromString(item.color),
-                    _getColorFromString(item.color).withOpacity(0.7),
+                    _getColorFromString(item.color).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -334,7 +334,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.2),
+                          color: statusColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Column(
@@ -380,7 +380,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.2),
+                          color: statusColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
