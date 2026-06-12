@@ -29,6 +29,21 @@ class _ClosetScreenState extends State<ClosetScreen> {
     });
   }
 
+  /// Mark item as worn (move to laundry)
+  void _markAsWorn(String itemId, String itemName) {
+    final success = _clothingService.markAsWorn(itemId);
+    if (success) {
+      _loadClothingItems();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$itemName moved to laundry'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
   /// Navigate to Add Clothing Screen
   void _onAddClothingPressed() async {
     final result = await Navigator.push(
@@ -123,6 +138,16 @@ class _ClosetScreenState extends State<ClosetScreen> {
                   Colors.green,
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  'Laundry',
+                  _clothingService.getLaundryCount().toString(),
+                  Icons.local_laundry_service,
+                  Colors.orange,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -211,7 +236,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
           children: [
             Icon(
               icon,
-              size: 28,
+              size: 24,
               color: color,
             ),
             const SizedBox(height: 8),
@@ -241,6 +266,8 @@ class _ClosetScreenState extends State<ClosetScreen> {
     ColorScheme colorScheme,
   ) {
     final statusColor = _getStatusColor(item.status);
+    final isAvailable = item.status == 'Available';
+    final isInLaundry = item.status == 'In Laundry';
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -253,7 +280,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
           children: [
             // Image placeholder with color
             Container(
-              height: 120,
+              height: 100,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: _getColorFromString(item.color),
@@ -278,56 +305,94 @@ class _ClosetScreenState extends State<ClosetScreen> {
             // Card content
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Item details
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
+                    Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.category,
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.outline,
-                                  ),
-                        ),
-                      ],
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.category,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: colorScheme.outline,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
 
-                    // Status badge
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 4,
-                        horizontal: 8,
+                    // Status badge and action
+                    if (isInLaundry) ...[
+                      // Laundry status
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'In Laundry',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: statusColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            Text(
+                              '${_clothingService.getRemainingLaundryDays(item.id)} days',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: statusColor,
+                                    fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(4),
+                    ] else if (isAvailable) ...[
+                      // Wear Today button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 28,
+                        child: FilledButton.tonal(
+                          onPressed: () =>
+                              _markAsWorn(item.id, item.name),
+                          style: FilledButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            textStyle:
+                                Theme.of(context).textTheme.labelSmall,
+                          ),
+                          child: const Text('Wear Today'),
+                        ),
                       ),
-                      child: Text(
-                        item.status,
-                        textAlign: TextAlign.center,
-                        style:
-                            Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: statusColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                    ] else ...[
+                      // Other status
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          item.status,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: statusColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -360,6 +425,12 @@ class _ClosetScreenState extends State<ClosetScreen> {
               _buildDetailRow(context, 'Category', item.category),
               _buildDetailRow(context, 'Color', item.color),
               _buildDetailRow(context, 'Status', item.status),
+              if (item.status == 'In Laundry' && item.laundryUntil != null)
+                _buildDetailRow(
+                  context,
+                  'Ready by',
+                  '${item.laundryUntil!.day}/${item.laundryUntil!.month}/${item.laundryUntil!.year}',
+                ),
               _buildDetailRow(
                 context,
                 'Added',

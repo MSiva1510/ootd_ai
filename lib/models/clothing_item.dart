@@ -6,6 +6,7 @@ class ClothingItem {
   final String color;
   final String status;
   final DateTime dateAdded;
+  final DateTime? laundryUntil;
 
   /// Available clothing categories
   static const List<String> categories = [
@@ -34,6 +35,7 @@ class ClothingItem {
     required this.color,
     required this.status,
     required this.dateAdded,
+    this.laundryUntil,
   });
 
   /// Convert ClothingItem to JSON
@@ -45,6 +47,7 @@ class ClothingItem {
       'color': color,
       'status': status,
       'dateAdded': dateAdded.toIso8601String(),
+      'laundryUntil': laundryUntil?.toIso8601String(),
     };
   }
 
@@ -57,6 +60,9 @@ class ClothingItem {
       color: json['color'] as String,
       status: json['status'] as String? ?? 'Available',
       dateAdded: DateTime.parse(json['dateAdded'] as String),
+      laundryUntil: json['laundryUntil'] != null
+          ? DateTime.parse(json['laundryUntil'] as String)
+          : null,
     );
   }
 
@@ -68,6 +74,7 @@ class ClothingItem {
     String? color,
     String? status,
     DateTime? dateAdded,
+    DateTime? laundryUntil,
   }) {
     return ClothingItem(
       id: id ?? this.id,
@@ -76,11 +83,12 @@ class ClothingItem {
       color: color ?? this.color,
       status: status ?? this.status,
       dateAdded: dateAdded ?? this.dateAdded,
+      laundryUntil: laundryUntil ?? this.laundryUntil,
     );
   }
 
   @override
   String toString() {
-    return 'ClothingItem(id: $id, name: $name, category: $category, color: $color, status: $status)';
+    return 'ClothingItem(id: $id, name: $name, category: $category, color: $color, status: $status, laundryUntil: $laundryUntil)';
   }
 }

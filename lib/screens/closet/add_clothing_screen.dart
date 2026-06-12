@@ -4,7 +4,7 @@ import 'package:ootd_ai/services/clothing_service.dart';
 
 /// Screen for adding a new clothing item
 class AddClothingScreen extends StatefulWidget {
-  const AddClothingScreen({Key? key}) : super(key: key);
+  const AddClothingScreen({super.key});
 
   @override
   State<AddClothingScreen> createState() => _AddClothingScreenState();
