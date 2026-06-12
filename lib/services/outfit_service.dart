@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:intl/intl.dart' as intl;
 import 'package:ootd_ai/models/clothing_item.dart';
 import 'package:ootd_ai/models/outfit.dart';
 import 'package:ootd_ai/services/clothing_service.dart';
@@ -71,13 +72,14 @@ class OutfitService {
     final selectedFootwear = footwear[_random.nextInt(footwear.length)];
 
     // Create outfit
+    final now = DateTime.now();
     final outfit = Outfit(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      date: DateTime.now(),
+      id: now.millisecondsSinceEpoch.toString(),
+      date: now,
       shirtId: selectedShirt.id,
       pantId: selectedPant.id,
       footwearId: selectedFootwear.id,
-      title: "Today's Outfit",
+      title: 'Outfit - ${intl.DateFormat('MMM d, y - h:mm a').format(now)}',
       itemIds: [selectedShirt.id, selectedPant.id, selectedFootwear.id],
     );
 

@@ -17,7 +17,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    var outfits = _outfitService.getAllOutfits();
+    var outfits = List.of(_outfitService.getAllOutfits());
 
     // Sort outfits
     if (_sortBy == 'recent') {
