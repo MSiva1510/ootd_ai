@@ -1,10 +1,9 @@
 import 'dart:math';
-import 'package:intl/intl.dart' as intl;
 import 'package:ootd_ai/models/clothing_item.dart';
 import 'package:ootd_ai/models/outfit.dart';
 import 'package:ootd_ai/services/clothing_service.dart';
 
-/// Service for managing outfit recommendations
+/// Service for managing outfit recommendations with smart history
 class OutfitService {
   /// Singleton instance
   static final OutfitService _instance = OutfitService._internal();
@@ -15,11 +14,11 @@ class OutfitService {
   /// Store today's outfit
   Outfit? _todaysOutfit;
 
+  /// Store outfit history (in-memory only)
+  List<Outfit> _outfitHistory = [];
+
   /// Random number generator for outfit selection
   late Random _random;
-
-  /// History of generated/saved outfits (used for Dashboard & History screens)
-  final List<Outfit> _outfits = [];
 
   /// Private constructor
   OutfitService._internal() {
@@ -32,12 +31,12 @@ class OutfitService {
     return _instance;
   }
 
-  /// Generate today's outfit from available clothes
+  /// Generate today's outfit from available clothes with anti-repetition logic
   /// 
   /// Selects:
-  /// - 1 Shirt or T-Shirt
-  /// - 1 Pant or Jeans
-  /// - 1 Footwear (Shoe, Sandal, Chappal)
+  /// - 1 Shirt or T-Shirt (avoiding previous outfit if possible)
+  /// - 1 Pant or Jeans (avoiding previous outfit if possible)
+  /// - 1 Footwear (Shoe, Sandal, Chappal) (avoiding previous outfit if possible)
   /// 
   /// Only uses clothes with status = "Available"
   /// Returns null if not enough clothes available
@@ -66,56 +65,92 @@ class OutfitService {
       return null;
     }
 
+    // Get previous outfit items to avoid repetition
+    String? previousShirtId;
+    String? previousPantId;
+    String? previousFootwearId;
+
+    if (_outfitHistory.isNotEmpty) {
+      final previousOutfit = _outfitHistory.first;
+      previousShirtId = previousOutfit.shirtId;
+      previousPantId = previousOutfit.pantId;
+      previousFootwearId = previousOutfit.footwearId;
+    }
+
+    // Try to avoid previous items, but fall back if necessary
+    var availableShirts = shirts
+        .where((item) => item.id != previousShirtId)
+        .toList();
+    if (availableShirts.isEmpty) {
+      availableShirts = shirts; // Use all if none available without previous
+    }
+
+    var availablePants = pants
+        .where((item) => item.id != previousPantId)
+        .toList();
+    if (availablePants.isEmpty) {
+      availablePants = pants; // Use all if none available without previous
+    }
+
+    var availableFootwear = footwear
+        .where((item) => item.id != previousFootwearId)
+        .toList();
+    if (availableFootwear.isEmpty) {
+      availableFootwear = footwear; // Use all if none available without previous
+    }
+
     // Randomly select one from each category
-    final selectedShirt = shirts[_random.nextInt(shirts.length)];
-    final selectedPant = pants[_random.nextInt(pants.length)];
-    final selectedFootwear = footwear[_random.nextInt(footwear.length)];
+    final selectedShirt = availableShirts[_random.nextInt(availableShirts.length)];
+    final selectedPant = availablePants[_random.nextInt(availablePants.length)];
+    final selectedFootwear = availableFootwear[_random.nextInt(availableFootwear.length)];
 
     // Create outfit
-    final now = DateTime.now();
     final outfit = Outfit(
-      id: now.millisecondsSinceEpoch.toString(),
-      date: now,
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      date: DateTime.now(),
       shirtId: selectedShirt.id,
       pantId: selectedPant.id,
       footwearId: selectedFootwear.id,
-      title: 'Outfit - ${intl.DateFormat('MMM d, y - h:mm a').format(now)}',
-      itemIds: [selectedShirt.id, selectedPant.id, selectedFootwear.id],
     );
 
     // Store as today's outfit
     _todaysOutfit = outfit;
 
-    // Add to history
-    _outfits.add(outfit);
+    // Add to history (newest first)
+    _outfitHistory.insert(0, outfit);
 
     return outfit;
   }
 
   /// Get today's outfit
-  /// 
-  /// Returns the currently stored outfit for today.
-  /// Returns null if no outfit has been generated.
   Outfit? getTodaysOutfit() {
     return _todaysOutfit;
   }
 
+  /// Get all outfit history (newest first)
+  List<Outfit> getAllOutfits() {
+    return List.from(_outfitHistory);
+  }
+
+  /// Get favorite outfits (most recent first, limited to 5)
+  List<Outfit> getFavoriteOutfits() {
+    return _outfitHistory.take(5).toList();
+  }
+
+  /// Get outfit history for a specific number of days
+  List<Outfit> getOutfitHistoryForDays(int days) {
+    final cutoffDate = DateTime.now().subtract(Duration(days: days));
+    return _outfitHistory
+        .where((outfit) => outfit.date.isAfter(cutoffDate))
+        .toList();
+  }
+
   /// Get clothing item by ID
-  /// 
-  /// Used to retrieve full details of items in an outfit
   ClothingItem? getClothingItemById(String id) {
     return _clothingService.getById(id);
   }
 
   /// Get outfit details with full clothing information
-  /// 
-  /// Returns a map with:
-  /// - outfit: the Outfit object
-  /// - shirt: the ClothingItem for shirt
-  /// - pant: the ClothingItem for pant
-  /// - footwear: the ClothingItem for footwear
-  /// 
-  /// Returns null if outfit is null or any item is not found
   Map<String, dynamic>? getOutfitDetails(Outfit? outfit) {
     if (outfit == null) return null;
 
@@ -137,11 +172,6 @@ class OutfitService {
   }
 
   /// Check if there are enough clothes to generate an outfit
-  /// 
-  /// Returns true if there's at least:
-  /// - 1 shirt/t-shirt available
-  /// - 1 pant/jeans available
-  /// - 1 footwear available
   bool canGenerateOutfit() {
     final availableClothes = _clothingService.getAvailableClothes();
 
@@ -164,11 +194,6 @@ class OutfitService {
   }
 
   /// Get missing clothing categories
-  /// 
-  /// Returns a list of categories that are missing.
-  /// Useful for providing feedback to user.
-  /// 
-  /// Example: ['Shirt', 'Footwear']
   List<String> getMissingCategories() {
     final availableClothes = _clothingService.getAvailableClothes();
     final missing = <String>[];
@@ -199,50 +224,15 @@ class OutfitService {
     _todaysOutfit = null;
   }
 
-  // --- Added for Dashboard & History screens ---
-
-  /// Get all outfits in history (most recently added last)
-  List<Outfit> getAllOutfits() {
-    return _outfits;
+  /// Get history count
+  int getHistoryCount() {
+    return _outfitHistory.length;
   }
 
-  /// Get all outfits marked as favorite
-  List<Outfit> getFavoriteOutfits() {
-    return _outfits.where((outfit) => outfit.isFavorite).toList();
-  }
-
-  /// Toggle favorite status of an outfit by id
-  void toggleFavorite(String id) {
-    final index = _outfits.indexWhere((o) => o.id == id);
-    if (index != -1) {
-      _outfits[index] = _outfits[index].copyWith(
-        isFavorite: !_outfits[index].isFavorite,
-      );
-      if (_todaysOutfit?.id == id) {
-        _todaysOutfit = _outfits[index];
-      }
-    }
-  }
-
-  /// Rate an outfit by id (0-5)
-  void rateOutfit(String id, int rating) {
-    final index = _outfits.indexWhere((o) => o.id == id);
-    if (index != -1) {
-      _outfits[index] = _outfits[index].copyWith(ratings: rating);
-      if (_todaysOutfit?.id == id) {
-        _todaysOutfit = _outfits[index];
-      }
-    }
-  }
-
-  /// Add an outfit to history (e.g. for seeding/testing or manual saves)
-  void addOutfit(Outfit outfit) {
-    _outfits.add(outfit);
-  }
-
-  /// Clear all outfit history
-  void clearAll() {
-    _outfits.clear();
-    _todaysOutfit = null;
+  /// Get previous outfit (one before today's)
+  Outfit? getPreviousOutfit() {
+    if (_outfitHistory.isEmpty) return null;
+    if (_outfitHistory.length == 1) return null;
+    return _outfitHistory[1];
   }
 }

@@ -1,305 +1,506 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' as intl;
+import 'package:ootd_ai/models/outfit.dart';
+import 'package:ootd_ai/models/clothing_item.dart';
 import 'package:ootd_ai/services/outfit_service.dart';
-import 'package:ootd_ai/widgets/empty_state.dart';
 
+/// Screen for displaying outfit history
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({Key? key}) : super(key: key);
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  final OutfitService _outfitService = OutfitService();
-  String _sortBy = 'recent';
+  late OutfitService _outfitService;
+  List<Outfit> _outfitHistory = [];
 
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    var outfits = List.of(_outfitService.getAllOutfits());
+  void initState() {
+    super.initState();
+    _outfitService = OutfitService();
+    _loadHistory();
+  }
 
-    // Sort outfits
-    if (_sortBy == 'recent') {
-      outfits.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    } else if (_sortBy == 'rated') {
-      outfits.sort((a, b) => b.ratings.compareTo(a.ratings));
-    } else if (_sortBy == 'oldest') {
-      outfits.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  /// Load outfit history
+  void _loadHistory() {
+    setState(() {
+      _outfitHistory = _outfitService.getAllOutfits();
+    });
+  }
+
+  /// Get color from color name
+  Color _getColorFromString(String colorName) {
+    final Map<String, Color> colorMap = {
+      'Blue': Colors.blue,
+      'White': Colors.grey.shade100,
+      'Black': Colors.grey.shade900,
+      'Khaki': const Color(0xFFF0E68C),
+      'Brown': Colors.brown,
+      'Red': Colors.red,
+      'Green': Colors.green,
+      'Yellow': Colors.yellow,
+      'Purple': Colors.purple,
+      'Pink': Colors.pink,
+      'Orange': Colors.orange,
+      'Grey': Colors.grey,
+      'Beige': const Color(0xFFF5F5DC),
+      'Navy': const Color(0xFF000080),
+    };
+
+    return colorMap[colorName] ?? Colors.blue;
+  }
+
+  /// Format date for display
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final outfitDate = DateTime(date.year, date.month, date.day);
+
+    if (outfitDate == today) {
+      return 'Today';
+    } else if (outfitDate == yesterday) {
+      return 'Yesterday';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
     }
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Outfit History'),
-        elevation: 0,
-        actions: [
-          PopupMenuButton(
-            onSelected: (value) {
-              setState(() {
-                _sortBy = value;
-              });
-            },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem(
-                value: 'recent',
-                child: Text('Most Recent'),
+  /// Show outfit details in bottom sheet
+  void _showOutfitDetails(BuildContext context, Outfit outfit) {
+    final details = _outfitService.getOutfitDetails(outfit);
+    if (details == null) return;
+
+    final shirt = details['shirt'] as ClothingItem;
+    final pant = details['pant'] as ClothingItem;
+    final footwear = details['footwear'] as ClothingItem;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Outfit Details',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
-              const PopupMenuItem(
-                value: 'rated',
-                child: Text('Highest Rated'),
+              const SizedBox(height: 24),
+              _buildDetailRow(context, 'Date', _formatDate(outfit.date)),
+              const SizedBox(height: 16),
+              Text(
+                '👕 Top Wear',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
-              const PopupMenuItem(
-                value: 'oldest',
-                child: Text('Oldest First'),
+              const SizedBox(height: 8),
+              _buildItemDetail(context, shirt),
+              const SizedBox(height: 16),
+              Text(
+                '👖 Bottom Wear',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              _buildItemDetail(context, pant),
+              const SizedBox(height: 16),
+              Text(
+                '👟 Footwear',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              _buildItemDetail(context, footwear),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
               ),
             ],
-            icon: const Icon(Icons.sort),
           ),
-        ],
-      ),
-      body: outfits.isEmpty
-          ? EmptyState(
-              title: 'No outfit history',
-              description: 'Create your first outfit to start tracking history',
-              icon: Icons.history_outlined,
-              actionLabel: 'Create Outfit',
-              onActionPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Create outfit feature coming soon'),
-                  ),
-                );
-              },
-            )
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: _buildStatsSection(context, colorScheme, outfits),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildHistoryTimeline(context, colorScheme, outfits),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
+        );
+      },
     );
   }
 
-  Widget _buildStatsSection(
-      BuildContext context, ColorScheme colorScheme, List<dynamic> outfits) {
-    final totalOutfits = outfits.length;
-    final favoriteOutfits =
-        outfits.where((o) => o.isFavorite).length;
-    final averageRating = outfits.isEmpty
-    ? 0.0
-    : outfits.fold(
-        0.0,
-        (sum, o) => sum + o.ratings.toDouble(),
-      ) /
-      totalOutfits;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Statistics',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  context,
-                  'Total Outfits',
-                  totalOutfits.toString(),
-                  Icons.style,
-                ),
-                _buildStatItem(
-                  context,
-                  'Favorites',
-                  favoriteOutfits.toString(),
-                  Icons.favorite,
-                ),
-                _buildStatItem(
-                  context,
-                  'Avg Rating',
-                  averageRating.toStringAsFixed(1),
-                  Icons.star,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    BuildContext context,
-    String label,
-    String value,
-    IconData icon,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Column(
+  /// Build detail row
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Icon(
-          icon,
-          color: colorScheme.primary,
-          size: 24,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        const SizedBox(height: 4),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.outline,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
               ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
       ],
     );
   }
 
-  Widget _buildHistoryTimeline(
-      BuildContext context, ColorScheme colorScheme, List<dynamic> outfits) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  /// Build item detail
+  Widget _buildItemDetail(BuildContext context, ClothingItem item) {
+    return Row(
       children: [
-        Text(
-          'Timeline',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: _getColorFromString(item.color),
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-        const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: outfits.length,
-          itemBuilder: (context, index) {
-            final outfit = outfits[index];
-            final isFirst = index == 0;
-            final isLast = index == outfits.length - 1;
-
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Timeline dot and line
-                Column(
-                  children: [
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: outfit.isFavorite
-                            ? Colors.red
-                            : colorScheme.primary,
-                      ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.name,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    if (!isLast)
-                      Container(
-                        width: 2,
-                        height: 120,
-                        color: colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                  ],
-                ),
-                const SizedBox(width: 16),
-
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: isFirst ? 0 : 8),
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    outfit.title,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                ),
-                                if (outfit.isFavorite)
-                                  const Icon(
-                                    Icons.favorite,
-                                    color: Colors.red,
-                                    size: 16,
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              intl.DateFormat('MMM d, y - h:mm a')
-                                  .format(outfit.createdAt),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: colorScheme.outline,
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                Chip(
-                                  label: Text(
-                                      '${outfit.itemIds.length} items'),
-                                  avatar: const Icon(Icons.checkroom),
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                if (outfit.occasion != null)
-                                  Chip(
-                                    label: Text(outfit.occasion!),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                if (outfit.ratings > 0)
-                                  Chip(
-                                    label: Text('${outfit.ratings}★'),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      item.category,
+                      style:
+                          Theme.of(context).textTheme.labelSmall?.copyWith(
+                                fontSize: 10,
+                                color:
+                                    Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      item.color,
+                      style:
+                          Theme.of(context).textTheme.labelSmall?.copyWith(
+                                fontSize: 10,
+                                color: Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Outfit History'),
+        elevation: 0,
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: Text(
+                '${_outfitHistory.length} outfits',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: _buildBody(context, colorScheme),
+    );
+  }
+
+  /// Build main body
+  Widget _buildBody(BuildContext context, ColorScheme colorScheme) {
+    if (_outfitHistory.isEmpty) {
+      return _buildEmptyState(context, colorScheme);
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        _loadHistory();
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: _outfitHistory.length,
+        itemBuilder: (context, index) {
+          return _buildOutfitCard(
+            context,
+            _outfitHistory[index],
+            colorScheme,
+          );
+        },
+      ),
+    );
+  }
+
+  /// Build empty state
+  Widget _buildEmptyState(BuildContext context, ColorScheme colorScheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.history,
+            size: 80,
+            color: colorScheme.outline,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'No Outfit History',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            );
-          },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start generating outfits to see history',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.outline,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(context, '/');
+            },
+            icon: const Icon(Icons.checkroom),
+            label: const Text('Go to Outfit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build outfit history card
+  Widget _buildOutfitCard(
+    BuildContext context,
+    Outfit outfit,
+    ColorScheme colorScheme,
+  ) {
+    final details = _outfitService.getOutfitDetails(outfit);
+    if (details == null) return const SizedBox.shrink();
+
+    final shirt = details['shirt'] as ClothingItem;
+    final pant = details['pant'] as ClothingItem;
+    final footwear = details['footwear'] as ClothingItem;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12.0),
+      child: InkWell(
+        onTap: () => _showOutfitDetails(context, outfit),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Date header
+              Text(
+                _formatDate(outfit.date),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 12),
+
+              // Color preview boxes
+              Row(
+                children: [
+                  // Shirt color
+                  Expanded(
+                    child: _buildColorPreviewWithLabel(
+                      context,
+                      '👕',
+                      shirt.color,
+                      _getColorFromString(shirt.color),
+                      shirt.name,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Pant color
+                  Expanded(
+                    child: _buildColorPreviewWithLabel(
+                      context,
+                      '👖',
+                      pant.color,
+                      _getColorFromString(pant.color),
+                      pant.name,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Footwear color
+                  Expanded(
+                    child: _buildColorPreviewWithLabel(
+                      context,
+                      '👟',
+                      footwear.color,
+                      _getColorFromString(footwear.color),
+                      footwear.name,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Item names
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          shirt.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(fontSize: 10),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pant.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(fontSize: 10),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          footwear.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(fontSize: 10),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Tap to view details
+              Text(
+                'Tap to view details',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                      fontSize: 9,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build color preview with label
+  Widget _buildColorPreviewWithLabel(
+    BuildContext context,
+    String emoji,
+    String colorName,
+    Color color,
+    String itemName,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          height: 60,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              emoji,
+              style: const TextStyle(fontSize: 24),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          colorName,
+          style: Theme.of(context).textTheme.labelSmall,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
