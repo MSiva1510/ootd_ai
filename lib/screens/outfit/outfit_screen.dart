@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:ootd_ai/models/outfit.dart';
 import 'package:ootd_ai/models/clothing_item.dart';
@@ -81,28 +82,6 @@ class _OutfitScreenState extends State<OutfitScreen> {
     );
   }
 
-  /// Get color from color name
-  Color _getColorFromString(String colorName) {
-    final Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'White': Colors.grey.shade100,
-      'Black': Colors.grey.shade900,
-      'Khaki': const Color(0xFFF0E68C),
-      'Brown': Colors.brown,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Pink': Colors.pink,
-      'Orange': Colors.orange,
-      'Grey': Colors.grey,
-      'Beige': const Color(0xFFF5F5DC),
-      'Navy': const Color(0xFF000080),
-    };
-
-    return colorMap[colorName] ?? Colors.blue;
-  }
-
   /// Format time for display
   String _formatTime(DateTime dateTime) {
     final hour = dateTime.hour.toString().padLeft(2, '0');
@@ -143,15 +122,10 @@ class _OutfitScreenState extends State<OutfitScreen> {
           // Header with generation time
           _buildHeaderSection(context, colorScheme),
 
-          const SizedBox(height: 16),
-
-          // Outfit visualization
-          _buildOutfitDisplay(context, colorScheme),
-
           const SizedBox(height: 24),
 
           // Top wear section
-          _buildOutfitSection(
+          _buildOutfitItemCard(
             context,
             colorScheme,
             '👕 Top Wear',
@@ -161,7 +135,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
           const SizedBox(height: 16),
 
           // Bottom wear section
-          _buildOutfitSection(
+          _buildOutfitItemCard(
             context,
             colorScheme,
             '👖 Bottom Wear',
@@ -171,7 +145,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
           const SizedBox(height: 16),
 
           // Footwear section
-          _buildOutfitSection(
+          _buildOutfitItemCard(
             context,
             colorScheme,
             '👟 Footwear',
@@ -277,145 +251,8 @@ class _OutfitScreenState extends State<OutfitScreen> {
     );
   }
 
-  /// Build outfit visualization with three colored sections
-  Widget _buildOutfitDisplay(BuildContext context, ColorScheme colorScheme) {
-    final shirt = _outfitDetails!['shirt'] as ClothingItem;
-    final pant = _outfitDetails!['pant'] as ClothingItem;
-    final footwear = _outfitDetails!['footwear'] as ClothingItem;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            // Top wear color
-            Container(
-              height: 80,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: _getColorFromString(shirt.color),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    _getColorFromString(shirt.color),
-                    _getColorFromString(shirt.color).withOpacity(0.7),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.checkroom,
-                      size: 36,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      shirt.category,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Bottom wear color
-            Container(
-              height: 80,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: _getColorFromString(pant.color),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    _getColorFromString(pant.color),
-                    _getColorFromString(pant.color).withOpacity(0.7),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.checkroom,
-                      size: 36,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      pant.category,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Footwear color
-            Container(
-              height: 80,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: _getColorFromString(footwear.color),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    _getColorFromString(footwear.color),
-                    _getColorFromString(footwear.color).withOpacity(0.7),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.checkroom,
-                      size: 36,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      footwear.category,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Build outfit section card
-  Widget _buildOutfitSection(
+  /// Build outfit item card with image
+  Widget _buildOutfitItemCard(
     BuildContext context,
     ColorScheme colorScheme,
     String title,
@@ -434,81 +271,76 @@ class _OutfitScreenState extends State<OutfitScreen> {
                   ),
             ),
             const SizedBox(height: 12),
+
+            // Image or placeholder
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                color: colorScheme.surfaceVariant,
+                child: item.imagePath != null && item.imagePath!.isNotEmpty
+                    ? Image.file(
+                        File(item.imagePath!),
+                        fit: BoxFit.cover,
+                      )
+                    : Center(
+                        child: Icon(
+                          Icons.checkroom,
+                          size: 64,
+                          color: colorScheme.outline,
+                        ),
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Item details
+            Text(
+              item.name,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
             Row(
               children: [
-                // Color preview
                 Container(
-                  width: 60,
-                  height: 60,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: _getColorFromString(item.color),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.2),
-                    ),
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    item.category,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                // Item details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.name,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              item.category,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: colorScheme.primary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              item.color,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    item.color,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.green,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 ),
               ],
@@ -525,7 +357,6 @@ class _OutfitScreenState extends State<OutfitScreen> {
     ColorScheme colorScheme,
     Map<String, dynamic> previousDetails,
   ) {
-    final previousOutfit = previousDetails['outfit'] as Outfit;
     final previousShirt = previousDetails['shirt'] as ClothingItem;
     final previousPant = previousDetails['pant'] as ClothingItem;
     final previousFootwear = previousDetails['footwear'] as ClothingItem;
@@ -562,28 +393,31 @@ class _OutfitScreenState extends State<OutfitScreen> {
                   children: [
                     // Shirt preview
                     Expanded(
-                      child: _buildSmallColorPreview(
-                        previousShirt.color,
-                        _getColorFromString(previousShirt.color),
+                      child: _buildSmallOutfitPreview(
+                        context,
+                        colorScheme,
                         '👕',
+                        previousShirt,
                       ),
                     ),
                     const SizedBox(width: 8),
                     // Pant preview
                     Expanded(
-                      child: _buildSmallColorPreview(
-                        previousPant.color,
-                        _getColorFromString(previousPant.color),
+                      child: _buildSmallOutfitPreview(
+                        context,
+                        colorScheme,
                         '👖',
+                        previousPant,
                       ),
                     ),
                     const SizedBox(width: 8),
                     // Footwear preview
                     Expanded(
-                      child: _buildSmallColorPreview(
-                        previousFootwear.color,
-                        _getColorFromString(previousFootwear.color),
+                      child: _buildSmallOutfitPreview(
+                        context,
+                        colorScheme,
                         '👟',
+                        previousFootwear,
                       ),
                     ),
                   ],
@@ -596,30 +430,38 @@ class _OutfitScreenState extends State<OutfitScreen> {
     );
   }
 
-  /// Build small color preview
-  Widget _buildSmallColorPreview(
-    String colorName,
-    Color color,
+  /// Build small outfit preview
+  Widget _buildSmallOutfitPreview(
+    BuildContext context,
+    ColorScheme colorScheme,
     String emoji,
+    ClothingItem item,
   ) {
     return Column(
       children: [
-        Container(
-          height: 50,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Center(
-            child: Text(
-              emoji,
-              style: const TextStyle(fontSize: 20),
-            ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            height: 80,
+            width: double.infinity,
+            color: colorScheme.surfaceVariant,
+            child: item.imagePath != null && item.imagePath!.isNotEmpty
+                ? Image.file(
+                    File(item.imagePath!),
+                    fit: BoxFit.cover,
+                  )
+                : Center(
+                    child: Icon(
+                      Icons.checkroom,
+                      size: 32,
+                      color: colorScheme.outline,
+                    ),
+                  ),
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          colorName,
+          item.name,
           style: Theme.of(context).textTheme.labelSmall,
           textAlign: TextAlign.center,
           maxLines: 1,

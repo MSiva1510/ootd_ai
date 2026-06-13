@@ -1,33 +1,30 @@
-/// Model representing a clothing item in the wardrobe
+/// Model representing a clothing item in the closet
 class ClothingItem {
+  /// Unique identifier for the clothing item
   final String id;
+
+  /// Name/description of the clothing item
   final String name;
+
+  /// Category of the clothing item (Shirt, T-Shirt, Pant, Jeans, Shoe, Sandal, Chappal)
   final String category;
+
+  /// Color of the clothing item
   final String color;
+
+  /// Current status of the clothing item (Available, In Laundry, Damaged, Archive)
   final String status;
+
+  /// Date when the clothing item was added
   final DateTime dateAdded;
+
+  /// Date until which the clothing item is in laundry (null if not in laundry)
   final DateTime? laundryUntil;
 
-  /// Available clothing categories
-  static const List<String> categories = [
-    'Shirt',
-    'T-Shirt',
-    'Pant',
-    'Jeans',
-    'Shoe',
-    'Sandal',
-    'Chappal',
-  ];
+  /// Path to the clothing item image (null if no image)
+  final String? imagePath;
 
-  /// Available status options
-  static const List<String> statusOptions = [
-    'Available',
-    'In Laundry',
-    'Damaged',
-    'Archive',
-  ];
-
-  /// Constructor
+  /// Constructor for ClothingItem
   ClothingItem({
     required this.id,
     required this.name,
@@ -36,7 +33,31 @@ class ClothingItem {
     required this.status,
     required this.dateAdded,
     this.laundryUntil,
+    this.imagePath,
   });
+
+  /// Create a copy of this ClothingItem with optional field updates
+  ClothingItem copyWith({
+    String? id,
+    String? name,
+    String? category,
+    String? color,
+    String? status,
+    DateTime? dateAdded,
+    DateTime? laundryUntil,
+    String? imagePath,
+  }) {
+    return ClothingItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      color: color ?? this.color,
+      status: status ?? this.status,
+      dateAdded: dateAdded ?? this.dateAdded,
+      laundryUntil: laundryUntil ?? this.laundryUntil,
+      imagePath: imagePath ?? this.imagePath,
+    );
+  }
 
   /// Convert ClothingItem to JSON
   Map<String, dynamic> toJson() {
@@ -48,6 +69,7 @@ class ClothingItem {
       'status': status,
       'dateAdded': dateAdded.toIso8601String(),
       'laundryUntil': laundryUntil?.toIso8601String(),
+      'imagePath': imagePath,
     };
   }
 
@@ -58,37 +80,12 @@ class ClothingItem {
       name: json['name'] as String,
       category: json['category'] as String,
       color: json['color'] as String,
-      status: json['status'] as String? ?? 'Available',
+      status: json['status'] as String,
       dateAdded: DateTime.parse(json['dateAdded'] as String),
       laundryUntil: json['laundryUntil'] != null
           ? DateTime.parse(json['laundryUntil'] as String)
           : null,
+      imagePath: json['imagePath'] as String?,
     );
-  }
-
-  /// Create a copy of ClothingItem with modified fields
-  ClothingItem copyWith({
-    String? id,
-    String? name,
-    String? category,
-    String? color,
-    String? status,
-    DateTime? dateAdded,
-    DateTime? laundryUntil,
-  }) {
-    return ClothingItem(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      category: category ?? this.category,
-      color: color ?? this.color,
-      status: status ?? this.status,
-      dateAdded: dateAdded ?? this.dateAdded,
-      laundryUntil: laundryUntil ?? this.laundryUntil,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'ClothingItem(id: $id, name: $name, category: $category, color: $color, status: $status, laundryUntil: $laundryUntil)';
   }
 }

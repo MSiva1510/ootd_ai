@@ -1,11 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:ootd_ai/services/clothing_service.dart';
 import 'package:ootd_ai/models/clothing_item.dart';
 import 'package:ootd_ai/screens/closet/add_clothing_screen.dart';
+import 'package:ootd_ai/services/clothing_service.dart';
 
-/// Closet screen for managing clothing items
+/// Screen for displaying and managing the user's clothing closet
 class ClosetScreen extends StatefulWidget {
-  const ClosetScreen({super.key});
+  const ClosetScreen({Key? key}) : super(key: key);
 
   @override
   State<ClosetScreen> createState() => _ClosetScreenState();
@@ -19,392 +20,32 @@ class _ClosetScreenState extends State<ClosetScreen> {
   void initState() {
     super.initState();
     _clothingService = ClothingService();
-    _loadClothingItems();
+    _loadClothing();
   }
 
-  /// Load clothing items from service
-  void _loadClothingItems() {
+  /// Load clothing items
+  void _loadClothing() {
     setState(() {
       _clothingList = _clothingService.getAllClothes();
     });
   }
 
-  /// Mark item as worn (move to laundry)
-  void _markAsWorn(String itemId, String itemName) {
-    final success = _clothingService.markAsWorn(itemId);
-    if (success) {
-      _loadClothingItems();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$itemName moved to laundry'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    }
-  }
+  /// Mark item as worn
+  void _markAsWorn(ClothingItem item) {
+    _clothingService.markAsWorn(item.id);
+    _loadClothing();
 
-  /// Navigate to Add Clothing Screen
-  void _onAddClothingPressed() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AddClothingScreen(),
-      ),
-    );
-
-    // If item was added, refresh the list
-    if (result == true) {
-      _loadClothingItems();
-    }
-  }
-
-  /// Get status color based on status string
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Available':
-        return Colors.green;
-      case 'In Laundry':
-        return Colors.orange;
-      case 'Damaged':
-        return Colors.red;
-      case 'Archive':
-        return Colors.grey;
-      default:
-        return Colors.blue;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Closet'),
-        elevation: 0,
-        centerTitle: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Text(
-                '${_clothingList.length} items',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: _buildBody(context, colorScheme),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onAddClothingPressed,
-        tooltip: 'Add Clothing',
-        child: const Icon(Icons.add),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${item.name} marked as worn'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.green,
       ),
     );
   }
 
-  /// Build the main body of the screen
-  Widget _buildBody(BuildContext context, ColorScheme colorScheme) {
-    if (_clothingList.isEmpty) {
-      return _buildEmptyState(context, colorScheme);
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Summary cards
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryCard(
-                  context,
-                  'Total Items',
-                  _clothingList.length.toString(),
-                  Icons.checkroom,
-                  colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  context,
-                  'Available',
-                  _clothingService.getAvailableCount().toString(),
-                  Icons.check_circle,
-                  Colors.green,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  context,
-                  'Laundry',
-                  _clothingService.getLaundryCount().toString(),
-                  Icons.local_laundry_service,
-                  Colors.orange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Clothing grid
-          Text(
-            'Your Wardrobe',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.75,
-            ),
-            itemCount: _clothingList.length,
-            itemBuilder: (context, index) {
-              return _buildClothingCard(
-                context,
-                _clothingList[index],
-                colorScheme,
-              );
-            },
-          ),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  /// Build empty state widget
-  Widget _buildEmptyState(BuildContext context, ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.checkroom_outlined,
-            size: 64,
-            color: colorScheme.outline,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Your Closet is Empty',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add your first clothing item',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.outline,
-                ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: _onAddClothingPressed,
-            icon: const Icon(Icons.add),
-            label: const Text('Add Clothing'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build summary card widget
-  Widget _buildSummaryCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 24,
-              color: color,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.labelSmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Build individual clothing card
-  Widget _buildClothingCard(
-    BuildContext context,
-    ClothingItem item,
-    ColorScheme colorScheme,
-  ) {
-    final statusColor = _getStatusColor(item.status);
-    final isAvailable = item.status == 'Available';
-    final isInLaundry = item.status == 'In Laundry';
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          _showClothingDetails(context, item);
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image placeholder with color
-            Container(
-              height: 100,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: _getColorFromString(item.color),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    _getColorFromString(item.color),
-                    _getColorFromString(item.color).withValues(alpha: 0.7),
-                  ],
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  _getCategoryIcon(item.category),
-                  size: 48,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-
-            // Card content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Item details
-                    Text(
-                      item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.category,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: colorScheme.outline,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Status badge and action
-                    if (isInLaundry) ...[
-                      // Laundry status
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              'In Laundry',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: statusColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                            Text(
-                              '${_clothingService.getRemainingLaundryDays(item.id)} days',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: statusColor,
-                                    fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else if (isAvailable) ...[
-                      // Wear Today button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 28,
-                        child: FilledButton.tonal(
-                          onPressed: () =>
-                              _markAsWorn(item.id, item.name),
-                          style: FilledButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            textStyle:
-                                Theme.of(context).textTheme.labelSmall,
-                          ),
-                          child: const Text('Wear Today'),
-                        ),
-                      ),
-                    ] else ...[
-                      // Other status
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          item.status,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: statusColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Show clothing item details
-  void _showClothingDetails(BuildContext context, ClothingItem item) {
+  /// Show item details
+  void _showItemDetails(BuildContext context, ClothingItem item) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -415,31 +56,98 @@ class _ClosetScreenState extends State<ClosetScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Item Details',
+                item.name,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
-              const SizedBox(height: 24),
-              _buildDetailRow(context, 'Name', item.name),
-              _buildDetailRow(context, 'Category', item.category),
-              _buildDetailRow(context, 'Color', item.color),
-              _buildDetailRow(context, 'Status', item.status),
-              if (item.status == 'In Laundry' && item.laundryUntil != null)
-                _buildDetailRow(
-                  context,
-                  'Ready by',
-                  '${item.laundryUntil!.day}/${item.laundryUntil!.month}/${item.laundryUntil!.year}',
+              const SizedBox(height: 16),
+
+              // Image if available
+              if (item.imagePath != null && item.imagePath!.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(item.imagePath!),
+                    height: 250,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              else
+                Container(
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.checkroom,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
                 ),
+
+              const SizedBox(height: 16),
+
+              // Details
+              _buildDetailRow(
+                context,
+                'Category',
+                item.category,
+              ),
+              const SizedBox(height: 8),
+              _buildDetailRow(
+                context,
+                'Color',
+                item.color,
+              ),
+              const SizedBox(height: 8),
+              _buildDetailRow(
+                context,
+                'Status',
+                item.status,
+              ),
+              const SizedBox(height: 8),
               _buildDetailRow(
                 context,
                 'Added',
                 '${item.dateAdded.day}/${item.dateAdded.month}/${item.dateAdded.year}',
               ),
+
+              // Laundry status if in laundry
+              if (item.status == 'In Laundry' && item.laundryUntil != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: _buildDetailRow(
+                    context,
+                    'Ready by',
+                    '${item.laundryUntil!.day}/${item.laundryUntil!.month}/${item.laundryUntil!.year}',
+                  ),
+                ),
+
               const SizedBox(height: 24),
+
+              // Action button
+              if (item.status == 'Available')
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _markAsWorn(item);
+                    },
+                    child: const Text('Mark as Worn'),
+                  ),
+                ),
+
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
+                child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Close'),
                 ),
@@ -451,29 +159,26 @@ class _ClosetScreenState extends State<ClosetScreen> {
     );
   }
 
-  /// Build detail row for bottom sheet
+  /// Build detail row
   Widget _buildDetailRow(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ],
     );
   }
 
-  /// Get color from color name string
+  /// Get color from color name
   Color _getColorFromString(String colorName) {
     final Map<String, Color> colorMap = {
       'Blue': Colors.blue,
@@ -495,19 +200,309 @@ class _ClosetScreenState extends State<ClosetScreen> {
     return colorMap[colorName] ?? Colors.blue;
   }
 
-  /// Get appropriate icon for category
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Shirt':
-      case 'T-Shirt':
-      case 'Pant':
-      case 'Jeans':
-      case 'Shoe':
-      case 'Sandal':
-      case 'Chappal':
-        return Icons.checkroom;
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Closet'),
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: _buildBody(context, colorScheme),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(builder: (context) => const AddClothingScreen()),
+          );
+
+          if (result == true) {
+            _loadClothing();
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  /// Build main body
+  Widget _buildBody(BuildContext context, ColorScheme colorScheme) {
+    if (_clothingList.isEmpty) {
+      return _buildEmptyState(context, colorScheme);
+    }
+
+    // Summary cards
+    final totalCount = _clothingService.getTotalCount();
+    final availableCount = _clothingService.getAvailableCount();
+    final laundryCount = _clothingService.getLaundryCount();
+
+    return Column(
+      children: [
+        // Summary cards
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  'Total',
+                  totalCount.toString(),
+                  Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  'Available',
+                  availableCount.toString(),
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  'Laundry',
+                  laundryCount.toString(),
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Clothing grid
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16.0),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.75,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: _clothingList.length,
+            itemBuilder: (context, index) {
+              return _buildClothingCard(
+                context,
+                _clothingList[index],
+                colorScheme,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build empty state
+  Widget _buildEmptyState(BuildContext context, ColorScheme colorScheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.checkroom,
+            size: 80,
+            color: colorScheme.outline,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'No Clothing Items',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add your first clothing item to get started',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.outline,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          FilledButton.icon(
+            onPressed: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (context) => const AddClothingScreen()),
+              );
+
+              if (result == true) {
+                _loadClothing();
+              }
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add Clothing'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build summary card
+  Widget _buildSummaryCard(
+    BuildContext context,
+    String label,
+    String count,
+    Color color,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              count,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build clothing card
+  Widget _buildClothingCard(
+    BuildContext context,
+    ClothingItem item,
+    ColorScheme colorScheme,
+  ) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showItemDetails(context, item),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image section
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                color: colorScheme.surfaceVariant,
+                child: item.imagePath != null && item.imagePath!.isNotEmpty
+                    ? Image.file(
+                        File(item.imagePath!),
+                        fit: BoxFit.cover,
+                      )
+                    : Center(
+                        child: Icon(
+                          Icons.checkroom,
+                          size: 48,
+                          color: colorScheme.outline,
+                        ),
+                      ),
+              ),
+            ),
+
+            // Info section
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          item.category,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                fontSize: 9,
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getColorFromString(item.color)
+                              .withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          item.color,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.status,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontSize: 8,
+                          color: _getStatusColor(item.status),
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Get status color
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Available':
+        return Colors.green;
+      case 'In Laundry':
+        return Colors.orange;
+      case 'Damaged':
+        return Colors.red;
+      case 'Archive':
+        return Colors.grey;
       default:
-        return Icons.checkroom;
+        return Colors.grey;
     }
   }
 }

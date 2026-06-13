@@ -1,6 +1,5 @@
 name: ootd_ai
-description: A sophisticated OOTD (Outfit Of The Day) AI Flutter application with clean architecture.
-
+description: A Flutter app for outfit of the day recommendations with smart history and laundry tracking.
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -12,60 +11,28 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # State Management
-  provider: ^6.0.0
-  # or use: riverpod: ^2.0.0
-  # or use: bloc: ^8.0.0
+  # Material Design
+  cupertino_icons: ^1.0.2
 
-  # API & HTTP
-  http: ^1.1.0
-  dio: ^5.3.0
-
-  # Local Storage
-  shared_preferences: ^2.2.0
-  hive: ^2.2.0
-  hive_flutter: ^1.1.0
-
-  # Date & Time
-  intl: ^0.20.2
-
-  # Image Handling
+  # Image picking from camera and gallery
   image_picker: ^1.0.0
-  cached_network_image: ^3.3.0
 
-  # Analytics & Logging
-  firebase_core: ^4.10.0
-  firebase_analytics: ^12.4.2
-  firebase_crashlytics: ^5.2.3
-
-  # Environment Configuration
-  flutter_dotenv: ^6.0.1
-
-  # Google Services
-  google_sign_in: ^7.2.0
-
-  # Animations
-  animations: ^2.0.0
-
+  shared_preferences: ^2.5.3
+  
+  intl: ^0.20.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # Linting
-  flutter_lints: ^6.0.0
-
-  # Testing
-  mockito: ^5.4.0
-  integration_test:
-    sdk: flutter
+  flutter_lints: ^2.0.0
 
 flutter:
   uses-material-design: true
 
-  # Assets
-  assets:
-    - assets/images/
-    - assets/icons/
-    - assets/data/
-    - .env
-
+  # Uncomment and add your fonts here if needed
+  # fonts:
+  #   - family: CustomFont
+  #     fonts:
+  #       - asset: assets/fonts/CustomFont-Regular.ttf
+  #       - asset: assets/fonts/CustomFont-Bold.ttf
+  #         weight: 700
