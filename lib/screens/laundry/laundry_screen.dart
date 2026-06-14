@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ootd_ai/models/clothing_item.dart';
 import 'package:ootd_ai/services/clothing_service.dart';
 
-/// Screen for managing clothing items in laundry
+/// Laundry screen with auto-return and countdown timer
 class LaundryScreen extends StatefulWidget {
   const LaundryScreen({Key? key}) : super(key: key);
 
@@ -19,6 +19,15 @@ class _LaundryScreenState extends State<LaundryScreen> {
     super.initState();
     _clothingService = ClothingService();
     _loadLaundry();
+
+    // Refresh every second to update timers
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        _loadLaundry();
+      }
+      return mounted;
+    });
   }
 
   /// Load laundry items
@@ -42,9 +51,20 @@ class _LaundryScreenState extends State<LaundryScreen> {
     );
   }
 
-  /// Get remaining laundry days
-  int _getRemainingDays(ClothingItem item) {
-    return _clothingService.getRemainingLaundryDays(item.id);
+  /// Get remaining hours for display
+  int _getRemainingHours(ClothingItem item) {
+    return _clothingService.getRemainingLaundryHours(item.id);
+  }
+
+  /// Format remaining time
+  String _formatRemainingTime(int hours) {
+    if (hours <= 0) {
+      return 'Ready!';
+    } else if (hours >= 24) {
+      return 'Ready in ${(hours / 24).toStringAsFixed(1)}d';
+    } else {
+      return 'Ready in ${hours}h';
+    }
   }
 
   @override
@@ -125,14 +145,15 @@ class _LaundryScreenState extends State<LaundryScreen> {
     );
   }
 
-  /// Build laundry card
+  /// Build laundry card with countdown timer
   Widget _buildLaundryCard(
     BuildContext context,
     ClothingItem item,
     ColorScheme colorScheme,
   ) {
-    final remainingDays = _getRemainingDays(item);
-    final isReady = remainingDays <= 0;
+    final remainingHours = _getRemainingHours(item);
+    final isReady = remainingHours <= 0;
+    final progressValue = isReady ? 1.0 : ((24 - remainingHours) / 24);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
@@ -155,17 +176,22 @@ class _LaundryScreenState extends State<LaundryScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Chip(
-                  label: Text(
-                    isReady ? 'Ready!' : 'In Progress',
-                    style: const TextStyle(fontSize: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isReady
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.orange.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  backgroundColor: isReady
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.orange.withOpacity(0.2),
-                  labelStyle: TextStyle(
-                    color: isReady ? Colors.green : Colors.orange,
-                    fontWeight: FontWeight.w500,
+                  child: Text(
+                    isReady ? 'Ready!' : 'In Progress',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: isReady ? Colors.green : Colors.orange,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                        ),
                   ),
                 ),
               ],
@@ -173,7 +199,53 @@ class _LaundryScreenState extends State<LaundryScreen> {
 
             const SizedBox(height: 12),
 
-            // Progress section
+            // Timer display
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Remaining Time',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: colorScheme.outline,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatRemainingTime(remainingHours),
+                      style:
+                          Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isReady ? Colors.green : Colors.orange,
+                              ),
+                    ),
+                  ],
+                ),
+                if (item.laundryUntil != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Ready By',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: colorScheme.outline,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${item.laundryUntil!.day}/${item.laundryUntil!.month} ${item.laundryUntil!.hour}:${item.laundryUntil!.minute.toString().padLeft(2, '0')}',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Progress indicator
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -181,12 +253,15 @@ class _LaundryScreenState extends State<LaundryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Remaining Days',
-                      style: Theme.of(context).textTheme.labelSmall,
+                      'Progress',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontSize: 10,
+                          ),
                     ),
                     Text(
-                      remainingDays.toString(),
+                      '${(progressValue * 100).toStringAsFixed(0)}%',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
                     ),
@@ -196,8 +271,8 @@ class _LaundryScreenState extends State<LaundryScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: isReady ? 1.0 : (2 - remainingDays) / 2,
-                    minHeight: 6,
+                    value: progressValue,
+                    minHeight: 8,
                     backgroundColor: colorScheme.surfaceVariant,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       isReady ? Colors.green : Colors.orange,
@@ -209,21 +284,30 @@ class _LaundryScreenState extends State<LaundryScreen> {
 
             const SizedBox(height: 12),
 
-            // Ready by date
+            // Category and wear count
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Ready by',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: colorScheme.outline,
-                      ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Text(
+                    item.category,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontSize: 9,
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
                 ),
                 Text(
-                  item.laundryUntil != null
-                      ? '${item.laundryUntil!.day}/${item.laundryUntil!.month}/${item.laundryUntil!.year}'
-                      : 'N/A',
+                  'Worn ${item.wearCount}x',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 9,
                         color: colorScheme.outline,
                       ),
                 ),

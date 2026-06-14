@@ -23,7 +23,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
     _outfitService = OutfitService();
     _currentOutfit = _outfitService.getTodaysOutfit();
     if (_currentOutfit != null) {
-      _outfitDetails = _outfitService.getOutfitDetails(_currentOutfit);
+      _outfitDetails = _outfitService.getOutfitDetails(_currentOutfit!);
     }
   }
 
@@ -108,6 +108,9 @@ class _OutfitScreenState extends State<OutfitScreen> {
       return _buildEmptyState(context, colorScheme);
     }
 
+    final outfit = _currentOutfit!;
+    final details = _outfitDetails!;
+
     final previousOutfit = _outfitService.getPreviousOutfit();
     final previousDetails = previousOutfit != null
         ? _outfitService.getOutfitDetails(previousOutfit)
@@ -119,7 +122,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with generation time
-          _buildHeaderSection(context, colorScheme),
+          _buildHeaderSection(context, colorScheme, outfit),
 
           const SizedBox(height: 24),
 
@@ -128,7 +131,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
             context,
             colorScheme,
             '👕 Top Wear',
-            _outfitDetails!['shirt'] as ClothingItem,
+            details['shirt'] as ClothingItem,
           ),
 
           const SizedBox(height: 16),
@@ -138,7 +141,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
             context,
             colorScheme,
             '👖 Bottom Wear',
-            _outfitDetails!['pant'] as ClothingItem,
+            details['pant'] as ClothingItem,
           ),
 
           const SizedBox(height: 16),
@@ -148,7 +151,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
             context,
             colorScheme,
             '👟 Footwear',
-            _outfitDetails!['footwear'] as ClothingItem,
+            details['footwear'] as ClothingItem,
           ),
 
           const SizedBox(height: 32),
@@ -182,7 +185,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
   }
 
   /// Build header section with generation time
-  Widget _buildHeaderSection(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildHeaderSection(BuildContext context, ColorScheme colorScheme, Outfit outfit) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -202,7 +205,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Generated: ${_formatTime(_currentOutfit!.date)}',
+              'Generated: ${_formatTime(outfit.date)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.outline,
                   ),
@@ -263,11 +266,32 @@ class _OutfitScreenState extends State<OutfitScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(3),
                   ),
+                  child: Text(
+                    '${item.wearCount}x',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontSize: 10,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
 

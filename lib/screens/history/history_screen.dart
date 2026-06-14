@@ -4,7 +4,7 @@ import 'package:ootd_ai/models/outfit.dart';
 import 'package:ootd_ai/models/clothing_item.dart';
 import 'package:ootd_ai/services/outfit_service.dart';
 
-/// Screen for displaying outfit history
+/// History screen with improved outfit display and analytics
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
 
@@ -68,6 +68,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  /// Get outfit name based on items
+  String _getOutfitName(Map<String, dynamic> details) {
+    final shirt = details['shirt'] as ClothingItem;
+    final pant = details['pant'] as ClothingItem;
+    final footwear = details['footwear'] as ClothingItem;
+
+    return '${shirt.color} & ${pant.color}';
+  }
+
   /// Show outfit details in bottom sheet
   void _showOutfitDetails(BuildContext context, Outfit outfit) {
     final details = _outfitService.getOutfitDetails(outfit);
@@ -99,9 +108,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  _formatDate(outfit.date),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                ),
                 const SizedBox(height: 24),
-                _buildDetailRow(context, 'Date', _formatDate(outfit.date)),
-                const SizedBox(height: 16),
                 Text(
                   '👕 Top Wear',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -141,25 +155,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         );
       },
-    );
-  }
-
-  /// Build detail row
-  Widget _buildDetailRow(BuildContext context, String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ],
     );
   }
 
@@ -249,6 +244,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      '${item.wearCount}x',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontSize: 10,
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -274,7 +288,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Center(
                 child: Text(
                   '${_outfitHistory.length}',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
             ),
@@ -348,7 +364,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  /// Build outfit history card
+  /// Build outfit history card with improved design
   Widget _buildOutfitCard(
     BuildContext context,
     Outfit outfit,
@@ -360,6 +376,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final shirt = details['shirt'] as ClothingItem;
     final pant = details['pant'] as ClothingItem;
     final footwear = details['footwear'] as ClothingItem;
+    final totalWearCount = shirt.wearCount + pant.wearCount + footwear.wearCount;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
@@ -370,50 +387,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Date header
-              Text(
-                _formatDate(outfit.date),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 12),
-
-              // Color preview boxes
+              // Header with date
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Shirt color
-                  Expanded(
-                    child: _buildColorPreviewWithLabel(
-                      context,
-                      '👕',
-                      shirt.color,
-                      _getColorFromString(shirt.color),
-                      shirt.name,
-                    ),
+                  Text(
+                    _formatDate(outfit.date),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
-                  const SizedBox(width: 8),
-
-                  // Pant color
-                  Expanded(
-                    child: _buildColorPreviewWithLabel(
-                      context,
-                      '👖',
-                      pant.color,
-                      _getColorFromString(pant.color),
-                      pant.name,
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Footwear color
-                  Expanded(
-                    child: _buildColorPreviewWithLabel(
-                      context,
-                      '👟',
-                      footwear.color,
-                      _getColorFromString(footwear.color),
-                      footwear.name,
+                    child: Text(
+                      '${totalWearCount}x worn',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontSize: 10,
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ),
                 ],
@@ -421,43 +418,54 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
               const SizedBox(height: 12),
 
-              // Item names
+              // Outfit name
+              Text(
+                _getOutfitName(details),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.outline,
+                    ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Color preview boxes
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // Shirt color
                   Expanded(
-                    child: Text(
+                    child: _buildColorPreview(
+                      context,
+                      '👕',
+                      shirt.color,
+                      _getColorFromString(shirt.color),
                       shirt.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(fontSize: 10),
+                      shirt.wearCount,
                     ),
                   ),
                   const SizedBox(width: 8),
+
+                  // Pant color
                   Expanded(
-                    child: Text(
+                    child: _buildColorPreview(
+                      context,
+                      '👖',
+                      pant.color,
+                      _getColorFromString(pant.color),
                       pant.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(fontSize: 10),
+                      pant.wearCount,
                     ),
                   ),
                   const SizedBox(width: 8),
+
+                  // Footwear color
                   Expanded(
-                    child: Text(
+                    child: _buildColorPreview(
+                      context,
+                      '👟',
+                      footwear.color,
+                      _getColorFromString(footwear.color),
                       footwear.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(fontSize: 10),
+                      footwear.wearCount,
                     ),
                   ),
                 ],
@@ -480,37 +488,61 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  /// Build color preview with label
-  Widget _buildColorPreviewWithLabel(
+  /// Build color preview with wear count badge
+  Widget _buildColorPreview(
     BuildContext context,
     String emoji,
     String colorName,
     Color color,
     String itemName,
+    int wearCount,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          height: 60,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Container(
+              height: 60,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  emoji,
+                  style: const TextStyle(fontSize: 24),
+                ),
+              ),
             ),
-          ),
-          child: Center(
-            child: Text(
-              emoji,
-              style: const TextStyle(fontSize: 24),
+            // Wear count badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(
+                '${wearCount}x',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
         const SizedBox(height: 6),
         Text(
           colorName,
-          style: Theme.of(context).textTheme.labelSmall,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontSize: 9,
+              ),
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

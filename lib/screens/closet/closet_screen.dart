@@ -4,7 +4,7 @@ import 'package:ootd_ai/models/clothing_item.dart';
 import 'package:ootd_ai/screens/closet/add_clothing_screen.dart';
 import 'package:ootd_ai/services/clothing_service.dart';
 
-/// Screen for displaying and managing the user's clothing closet
+/// Smart closet screen with search, filters, and sorting
 class ClosetScreen extends StatefulWidget {
   const ClosetScreen({Key? key}) : super(key: key);
 
@@ -14,37 +14,246 @@ class ClosetScreen extends StatefulWidget {
 
 class _ClosetScreenState extends State<ClosetScreen> {
   late ClothingService _clothingService;
-  List<ClothingItem> _clothingList = [];
+  List<ClothingItem> _displayedClothes = [];
+  String _searchQuery = '';
+  String _selectedCategory = 'All';
+  String _selectedStatus = 'All';
+  String _selectedColor = 'All';
+  String _sortBy = 'Newest First';
+
+  final List<String> _categories = [
+    'All',
+    'Shirt',
+    'T-Shirt',
+    'Pant',
+    'Jeans',
+    'Shoe',
+    'Sandal',
+    'Chappal'
+  ];
+
+  final List<String> _statuses = ['All', 'Available', 'In Laundry', 'Damaged', 'Archive'];
+
+  final List<String> _colors = [
+    'All',
+    'Black',
+    'White',
+    'Blue',
+    'Red',
+    'Green',
+    'Brown',
+    'Khaki'
+  ];
+
+  final List<String> _sortOptions = [
+    'Newest First',
+    'Oldest First',
+    'Name A-Z',
+    'Name Z-A',
+    'Category',
+    'Color'
+  ];
 
   @override
   void initState() {
     super.initState();
     _clothingService = ClothingService();
-    _loadClothing();
+    _loadAndFilter();
   }
 
-  /// Load clothing items
-  void _loadClothing() {
+  /// Load and apply filters
+  void _loadAndFilter() {
+    var clothes = _clothingService.getAllClothes();
+
+    // Apply search
+    if (_searchQuery.isNotEmpty) {
+      clothes = _clothingService.search(_searchQuery);
+    }
+
+    // Apply category filter
+    if (_selectedCategory != 'All') {
+      clothes = clothes
+          .where((item) => item.category == _selectedCategory)
+          .toList();
+    }
+
+    // Apply status filter
+    if (_selectedStatus != 'All') {
+      clothes = clothes
+          .where((item) => item.status == _selectedStatus)
+          .toList();
+    }
+
+    // Apply color filter
+    if (_selectedColor != 'All') {
+      clothes = clothes
+          .where((item) => item.color.toLowerCase() == _selectedColor.toLowerCase())
+          .toList();
+    }
+
+    // Apply sorting
+    _applySort(clothes);
+
     setState(() {
-      _clothingList = _clothingService.getAllClothes();
+      _displayedClothes = clothes;
     });
+  }
+
+  /// Apply sorting to clothes list
+  void _applySort(List<ClothingItem> clothes) {
+    switch (_sortBy) {
+      case 'Newest First':
+        clothes.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+        break;
+      case 'Oldest First':
+        clothes.sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
+        break;
+      case 'Name A-Z':
+        clothes.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case 'Name Z-A':
+        clothes.sort((a, b) => b.name.compareTo(a.name));
+        break;
+      case 'Category':
+        clothes.sort((a, b) => a.category.compareTo(b.category));
+        break;
+      case 'Color':
+        clothes.sort((a, b) => a.color.compareTo(b.color));
+        break;
+    }
+  }
+
+  /// Clear all filters
+  void _clearFilters() {
+    setState(() {
+      _searchQuery = '';
+      _selectedCategory = 'All';
+      _selectedStatus = 'All';
+      _selectedColor = 'All';
+      _sortBy = 'Newest First';
+    });
+    _loadAndFilter();
   }
 
   /// Mark item as worn
   void _markAsWorn(ClothingItem item) {
     _clothingService.markAsWorn(item.id);
-    _loadClothing();
+    _loadAndFilter();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${item.name} marked as worn'),
+        content: Text('${item.name} moved to laundry'),
         duration: const Duration(seconds: 2),
         backgroundColor: Colors.green,
       ),
     );
   }
 
-  /// Show item details in bottom sheet
+  /// Mark item as available
+  void _markAsAvailable(ClothingItem item) {
+    _clothingService.markAsAvailable(item.id);
+    _loadAndFilter();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${item.name} is available'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  /// Delete item
+  void _deleteItem(ClothingItem item) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Item'),
+          content: Text('Delete ${item.name}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                _clothingService.deleteClothingItem(item.id);
+                Navigator.pop(context);
+                _loadAndFilter();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${item.name} deleted'),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Show quick actions menu
+  void _showQuickActions(BuildContext context, ClothingItem item) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                item.name,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              if (item.status == 'Available')
+                ListTile(
+                  leading: const Icon(Icons.local_laundry_service),
+                  title: const Text('Move to Laundry'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _markAsWorn(item);
+                  },
+                ),
+              if (item.status == 'In Laundry')
+                ListTile(
+                  leading: const Icon(Icons.done),
+                  title: const Text('Mark as Available'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _markAsAvailable(item);
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Delete', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _deleteItem(item);
+                },
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Show item details
   void _showItemDetails(BuildContext context, ClothingItem item) {
     showModalBottomSheet(
       context: context,
@@ -69,8 +278,6 @@ class _ClosetScreenState extends State<ClosetScreen> {
                       ),
                 ),
                 const SizedBox(height: 16),
-
-                // Image if available
                 if (item.imagePath != null && item.imagePath!.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
@@ -86,10 +293,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
                   )
                 else
                   _buildPlaceholder(context),
-
                 const SizedBox(height: 16),
-
-                // Details
                 _buildDetailRow(context, 'Category', item.category),
                 const SizedBox(height: 12),
                 _buildDetailRow(context, 'Color', item.color),
@@ -101,8 +305,8 @@ class _ClosetScreenState extends State<ClosetScreen> {
                   'Added',
                   '${item.dateAdded.day}/${item.dateAdded.month}/${item.dateAdded.year}',
                 ),
-
-                // Laundry status if in laundry
+                const SizedBox(height: 12),
+                _buildDetailRow(context, 'Wear Count', '${item.wearCount}x'),
                 if (item.status == 'In Laundry' && item.laundryUntil != null) ...[
                   const SizedBox(height: 12),
                   _buildDetailRow(
@@ -111,22 +315,17 @@ class _ClosetScreenState extends State<ClosetScreen> {
                     '${item.laundryUntil!.day}/${item.laundryUntil!.month}/${item.laundryUntil!.year}',
                   ),
                 ],
-
                 const SizedBox(height: 24),
-
-                // Action button
-                if (item.status == 'Available')
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _markAsWorn(item);
-                      },
-                      child: const Text('Mark as Worn'),
-                    ),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showQuickActions(context, item);
+                    },
+                    child: const Text('Quick Actions'),
                   ),
-
+                ),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
@@ -208,6 +407,22 @@ class _ClosetScreenState extends State<ClosetScreen> {
     return colorMap[colorName] ?? Colors.blue;
   }
 
+  /// Get status color
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Available':
+        return Colors.green;
+      case 'In Laundry':
+        return Colors.orange;
+      case 'Damaged':
+        return Colors.red;
+      case 'Archive':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -218,7 +433,161 @@ class _ClosetScreenState extends State<ClosetScreen> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: _buildBody(context, colorScheme),
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SearchBar(
+              hintText: 'Search by name, color, category...',
+              onChanged: (value) {
+                setState(() => _searchQuery = value);
+                _loadAndFilter();
+              },
+              leading: const Icon(Icons.search),
+              trailing: _searchQuery.isNotEmpty
+                  ? [
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          setState(() => _searchQuery = '');
+                          _loadAndFilter();
+                        },
+                      )
+                    ]
+                  : [],
+            ),
+          ),
+
+          // Filter and sort chips
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Category filter
+                Wrap(
+                  spacing: 6,
+                  children: _categories
+                      .map(
+                        (category) => FilterChip(
+                          label: Text(category),
+                          selected: _selectedCategory == category,
+                          onSelected: (selected) {
+                            setState(() => _selectedCategory = category);
+                            _loadAndFilter();
+                          },
+                        ),
+                      )
+                      .toList(),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Status filter
+                Wrap(
+                  spacing: 6,
+                  children: _statuses
+                      .map(
+                        (status) => FilterChip(
+                          label: Text(status),
+                          selected: _selectedStatus == status,
+                          onSelected: (selected) {
+                            setState(() => _selectedStatus = status);
+                            _loadAndFilter();
+                          },
+                        ),
+                      )
+                      .toList(),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Color filter
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Wrap(
+                    spacing: 6,
+                    children: _colors
+                        .map(
+                          (color) => FilterChip(
+                            label: Text(color),
+                            selected: _selectedColor == color,
+                            onSelected: (selected) {
+                              setState(() => _selectedColor = color);
+                              _loadAndFilter();
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Sort and clear buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButton<String>(
+                        value: _sortBy,
+                        isExpanded: true,
+                        items: _sortOptions
+                            .map((option) => DropdownMenuItem(
+                                  value: option,
+                                  child: Text(option),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _sortBy = value);
+                            _loadAndFilter();
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (_searchQuery.isNotEmpty ||
+                        _selectedCategory != 'All' ||
+                        _selectedStatus != 'All' ||
+                        _selectedColor != 'All')
+                      TextButton(
+                        onPressed: _clearFilters,
+                        child: const Text('Clear'),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Clothing grid or empty state
+          Expanded(
+            child: _displayedClothes.isEmpty
+                ? _buildEmptyState(context, colorScheme)
+                : GridView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.75,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: _displayedClothes.length,
+                    itemBuilder: (context, index) {
+                      return _buildClothingCard(
+                        context,
+                        _displayedClothes[index],
+                        colorScheme,
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push<bool>(
@@ -227,83 +596,11 @@ class _ClosetScreenState extends State<ClosetScreen> {
           );
 
           if (result == true) {
-            _loadClothing();
+            _loadAndFilter();
           }
         },
         child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  /// Build main body
-  Widget _buildBody(BuildContext context, ColorScheme colorScheme) {
-    if (_clothingList.isEmpty) {
-      return _buildEmptyState(context, colorScheme);
-    }
-
-    // Summary counts
-    final totalCount = _clothingService.getTotalCount();
-    final availableCount = _clothingService.getAvailableCount();
-    final laundryCount = _clothingService.getLaundryCount();
-
-    return Column(
-      children: [
-        // Summary cards
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildSummaryCard(
-                  context,
-                  'Total',
-                  totalCount.toString(),
-                  Colors.blue,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildSummaryCard(
-                  context,
-                  'Available',
-                  availableCount.toString(),
-                  Colors.green,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildSummaryCard(
-                  context,
-                  'Laundry',
-                  laundryCount.toString(),
-                  Colors.orange,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Clothing grid
-        Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16.0),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: _clothingList.length,
-            itemBuilder: (context, index) {
-              return _buildClothingCard(
-                context,
-                _clothingList[index],
-                colorScheme,
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 
@@ -320,67 +617,48 @@ class _ClosetScreenState extends State<ClosetScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'No Clothing Items',
+            'No Clothing Items Found',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Add your first clothing item to get started',
+            _displayedClothes.isEmpty && _searchQuery.isEmpty
+                ? 'Add your first clothing item to get started'
+                : 'Try adjusting your filters',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.outline,
                 ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          FilledButton.icon(
-            onPressed: () async {
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(builder: (context) => const AddClothingScreen()),
-              );
+          if (_searchQuery.isNotEmpty ||
+              _selectedCategory != 'All' ||
+              _selectedStatus != 'All' ||
+              _selectedColor != 'All')
+            FilledButton.icon(
+              onPressed: _clearFilters,
+              icon: const Icon(Icons.clear),
+              label: const Text('Clear Filters'),
+            )
+          else
+            FilledButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AddClothingScreen()),
+                );
 
-              if (result == true) {
-                _loadClothing();
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add Clothing'),
-          ),
+                if (result == true) {
+                  _loadAndFilter();
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Add Clothing'),
+            ),
         ],
-      ),
-    );
-  }
-
-  /// Build summary card
-  Widget _buildSummaryCard(
-    BuildContext context,
-    String label,
-    String count,
-    Color color,
-  ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              count,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -391,10 +669,11 @@ class _ClosetScreenState extends State<ClosetScreen> {
     ClothingItem item,
     ColorScheme colorScheme,
   ) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _showItemDetails(context, item),
+    return GestureDetector(
+      onTap: () => _showItemDetails(context, item),
+      onLongPress: () => _showQuickActions(context, item),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -452,7 +731,9 @@ class _ClosetScreenState extends State<ClosetScreen> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer,
                             borderRadius: BorderRadius.circular(2),
                           ),
                           child: Text(
@@ -462,7 +743,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
                                 .labelSmall
                                 ?.copyWith(
                                   fontSize: 8,
-                                  color: colorScheme.primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.w500,
                                 ),
                             maxLines: 1,
@@ -499,15 +780,29 @@ class _ClosetScreenState extends State<ClosetScreen> {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    item.status,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontSize: 7,
-                          color: _getStatusColor(item.status),
-                          fontWeight: FontWeight.w500,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        item.status,
+                        style:
+                            Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  fontSize: 7,
+                                  color: _getStatusColor(item.status),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '${item.wearCount}x',
+                        style:
+                            Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  fontSize: 7,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -516,21 +811,5 @@ class _ClosetScreenState extends State<ClosetScreen> {
         ),
       ),
     );
-  }
-
-  /// Get status color
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Available':
-        return Colors.green;
-      case 'In Laundry':
-        return Colors.orange;
-      case 'Damaged':
-        return Colors.red;
-      case 'Archive':
-        return Colors.grey;
-      default:
-        return Colors.grey;
-    }
   }
 }

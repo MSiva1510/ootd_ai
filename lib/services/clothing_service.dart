@@ -1,86 +1,28 @@
 import 'package:ootd_ai/models/clothing_item.dart';
 
-/// Service for managing clothing items in the wardrobe
+/// Service for managing clothing items with wear count and laundry intelligence
 class ClothingService {
   /// Singleton instance
   static final ClothingService _instance = ClothingService._internal();
 
-  /// Private list to store clothing items
-  late List<ClothingItem> _clothingList;
+  /// In-memory list of clothing items (for performance)
+  final List<ClothingItem> _clothingList = [];
 
   /// Private constructor
-  ClothingService._internal() {
-    _initializeDummyData();
-  }
+  ClothingService._internal();
 
   /// Factory constructor to return singleton instance
   factory ClothingService() {
     return _instance;
   }
 
-  /// Initialize dummy clothing data
-  void _initializeDummyData() {
-    _clothingList = [
-      ClothingItem(
-        id: '1',
-        name: 'Blue Formal Shirt',
-        category: 'Shirt',
-        color: 'Blue',
-        status: 'Available',
-        dateAdded: DateTime.now().subtract(const Duration(days: 30)),
-      ),
-      ClothingItem(
-        id: '2',
-        name: 'White T-Shirt',
-        category: 'T-Shirt',
-        color: 'White',
-        status: 'Available',
-        dateAdded: DateTime.now().subtract(const Duration(days: 15)),
-      ),
-      ClothingItem(
-        id: '3',
-        name: 'Black Jeans',
-        category: 'Jeans',
-        color: 'Black',
-        status: 'In Laundry',
-        dateAdded: DateTime.now().subtract(const Duration(days: 45)),
-        laundryUntil: DateTime.now().add(const Duration(days: 1)),
-      ),
-      ClothingItem(
-        id: '4',
-        name: 'Khaki Pant',
-        category: 'Pant',
-        color: 'Khaki',
-        status: 'Available',
-        dateAdded: DateTime.now().subtract(const Duration(days: 20)),
-      ),
-      ClothingItem(
-        id: '5',
-        name: 'White Sneakers',
-        category: 'Shoe',
-        color: 'White',
-        status: 'Available',
-        dateAdded: DateTime.now().subtract(const Duration(days: 60)),
-      ),
-      ClothingItem(
-        id: '6',
-        name: 'Brown Sandals',
-        category: 'Sandal',
-        color: 'Brown',
-        status: 'Available',
-        dateAdded: DateTime.now().subtract(const Duration(days: 10)),
-      ),
-    ];
-  }
-
   /// Get all clothing items
   List<ClothingItem> getAllClothes() {
-    // Check laundry status before returning
     checkLaundryStatus();
     return List.from(_clothingList);
   }
 
-  /// Get only available clothing items
+  /// Get available clothing items (status = "Available")
   List<ClothingItem> getAvailableClothes() {
     checkLaundryStatus();
     return _clothingList
@@ -88,7 +30,7 @@ class ClothingService {
         .toList();
   }
 
-  /// Get only laundry clothing items
+  /// Get clothing items in laundry (status = "In Laundry")
   List<ClothingItem> getLaundryClothes() {
     checkLaundryStatus();
     return _clothingList
@@ -110,7 +52,25 @@ class ClothingService {
         .toList();
   }
 
-  /// Get clothing item by id
+  /// Get clothing items by color
+  List<ClothingItem> getByColor(String color) {
+    return _clothingList
+        .where((item) => item.color.toLowerCase() == color.toLowerCase())
+        .toList();
+  }
+
+  /// Search clothing items
+  List<ClothingItem> search(String query) {
+    final lowerQuery = query.toLowerCase();
+    return _clothingList
+        .where((item) =>
+            item.name.toLowerCase().contains(lowerQuery) ||
+            item.category.toLowerCase().contains(lowerQuery) ||
+            item.color.toLowerCase().contains(lowerQuery))
+        .toList();
+  }
+
+  /// Get clothing item by ID
   ClothingItem? getById(String id) {
     try {
       return _clothingList.firstWhere((item) => item.id == id);
@@ -120,12 +80,20 @@ class ClothingService {
   }
 
   /// Add a new clothing item
-  /// 
-  /// This method adds a new clothing item to the wardrobe.
-  /// The item is added to the in-memory list.
-  /// 
-  /// Returns true if the item was added successfully.
-  bool addClothing(ClothingItem item) {
+  bool addClothing(String name, String category, String color) {
+    final item = ClothingItem(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name,
+      category: category,
+      color: color,
+      status: 'Available',
+      dateAdded: DateTime.now(),
+    );
+    return addClothingItem(item);
+  }
+
+  /// Add a clothing item
+  bool addClothingItem(ClothingItem item) {
     try {
       _clothingList.add(item);
       return true;
@@ -134,33 +102,59 @@ class ClothingService {
     }
   }
 
-  /// Add a new clothing item (alias for addClothing)
-  bool addClothingItem(ClothingItem item) {
-    return addClothing(item);
+  /// Update a clothing item
+  bool updateClothingItem(ClothingItem item) {
+    try {
+      final index = _clothingList.indexWhere((cloth) => cloth.id == item.id);
+      if (index != -1) {
+        _clothingList[index] = item;
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 
-  /// Mark a clothing item as worn (move to laundry)
-  /// 
-  /// Sets the item status to "In Laundry" and sets laundryUntil to 2 days from now.
-  /// 
-  /// Returns true if successful, false if item not found.
+  /// Delete a clothing item
+  bool deleteClothingItem(String id) {
+    try {
+      final index = _clothingList.indexWhere((cloth) => cloth.id == id);
+      if (index != -1) {
+        _clothingList.removeAt(index);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Increment wear count for an item (called when outfit is generated)
+  bool incrementWearCount(String id) {
+    final item = getById(id);
+    if (item == null) return false;
+
+    final updated = item.copyWith(wearCount: item.wearCount + 1);
+    return updateClothingItem(updated);
+  }
+
+  /// Mark item as worn (move to laundry for 24 hours with auto-return)
   bool markAsWorn(String id) {
     final item = getById(id);
     if (item == null) return false;
 
+    final now = DateTime.now();
     final updatedItem = item.copyWith(
       status: 'In Laundry',
-      laundryUntil: DateTime.now().add(const Duration(days: 2)),
+      laundryStart: now,
+      laundryUntil: now.add(const Duration(hours: 24)),
     );
 
     return updateClothingItem(updatedItem);
   }
 
-  /// Mark a clothing item as available (laundry done)
-  /// 
-  /// Sets the item status to "Available" and clears the laundryUntil date.
-  /// 
-  /// Returns true if successful, false if item not found.
+  /// Mark item as available (laundry done)
   bool markAsAvailable(String id) {
     final item = getById(id);
     if (item == null) return false;
@@ -168,72 +162,53 @@ class ClothingService {
     final updatedItem = item.copyWith(
       status: 'Available',
       laundryUntil: null,
+      laundryStart: null,
     );
 
     return updateClothingItem(updatedItem);
   }
 
-  /// Check laundry status and automatically mark items as available
-  /// 
-  /// If current date is >= laundryUntil, automatically sets status to "Available"
-  /// and clears the laundryUntil date.
+  /// Check laundry status and auto-return items after 24 hours
   void checkLaundryStatus() {
     final now = DateTime.now();
-    
+
     for (int i = 0; i < _clothingList.length; i++) {
       final item = _clothingList[i];
-      
-      // If item is in laundry and laundry period has ended
-      if (item.status == 'In Laundry' && 
-          item.laundryUntil != null && 
-          now.isAfter(item.laundryUntil!)) {
-        // Mark as available
+
+      // Auto-return after 24 hours
+      if (item.status == 'In Laundry' &&
+          item.laundryStart != null &&
+          now.difference(item.laundryStart!).inHours >= 24) {
         _clothingList[i] = item.copyWith(
           status: 'Available',
           laundryUntil: null,
+          laundryStart: null,
         );
       }
     }
   }
 
-  /// Get remaining laundry days for an item
-  /// 
-  /// Returns the number of days remaining until laundry is done.
-  /// Returns 0 if laundryUntil is null or in the past.
-  int getRemainingLaundryDays(String id) {
+  /// Get remaining laundry hours for an item
+  int getRemainingLaundryHours(String id) {
     final item = getById(id);
-    if (item == null || item.laundryUntil == null) {
+    if (item == null || item.laundryStart == null) {
       return 0;
     }
 
     final now = DateTime.now();
-    final difference = item.laundryUntil!.difference(now);
-    
-    if (difference.isNegative) {
-      return 0;
-    }
+    final elapsedHours = now.difference(item.laundryStart!).inHours;
+    final remainingHours = 24 - elapsedHours;
 
-    return difference.inDays + 1;
+    return remainingHours > 0 ? remainingHours : 0;
   }
 
-  /// Update an existing clothing item
-  bool updateClothingItem(ClothingItem item) {
-    final index = _clothingList.indexWhere((cloth) => cloth.id == item.id);
-    if (index != -1) {
-      _clothingList[index] = item;
-      return true;
-    }
-    return false;
+  /// Get remaining laundry days for an item (for display purposes)
+  int getRemainingLaundryDays(String id) {
+    final hours = getRemainingLaundryHours(id);
+    return (hours / 24).ceil();
   }
 
-  /// Delete a clothing item by id
-  bool deleteClothingItem(String id) {
-    final initialLength = _clothingList.length;
-    _clothingList.removeWhere((item) => item.id == id);
-    return _clothingList.length < initialLength;
-  }
-
-  /// Get total number of clothing items
+  /// Get total count of clothing items
   int getTotalCount() {
     return _clothingList.length;
   }
@@ -249,23 +224,36 @@ class ClothingService {
   }
 
   /// Get count by category
-  Map<String, int> getCategoryCount() {
-    final Map<String, int> categoryCount = {};
-    for (var item in _clothingList) {
-      categoryCount[item.category] =
-          (categoryCount[item.category] ?? 0) + 1;
-    }
-    return categoryCount;
+  int getCategoryCount(String category) {
+    return getByCategory(category).length;
+  }
+
+  /// Get most worn item
+  ClothingItem? getMostWornItem() {
+    if (_clothingList.isEmpty) return null;
+    return _clothingList.reduce((a, b) =>
+        a.wearCount > b.wearCount ? a : b);
+  }
+
+  /// Get least worn item
+  ClothingItem? getLeastWornItem() {
+    if (_clothingList.isEmpty) return null;
+    return _clothingList.reduce((a, b) =>
+        a.wearCount < b.wearCount ? a : b);
+  }
+
+  /// Get total wear count across all items
+  int getTotalWearCount() {
+    return _clothingList.fold(0, (sum, item) => sum + item.wearCount);
   }
 
   /// Clear all clothing items
-  void clearAll() {
+  Future<void> clearAll() async {
     _clothingList.clear();
   }
 
-  /// Reset to dummy data
-  void resetDummyData() {
-    _clothingList.clear();
-    _initializeDummyData();
+  /// Reload clothing items
+  Future<void> reload() async {
+    // In-memory service, nothing to reload
   }
 }

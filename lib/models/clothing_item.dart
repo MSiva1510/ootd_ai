@@ -24,6 +24,12 @@ class ClothingItem {
   /// Path to the clothing item image (null if no image)
   final String? imagePath;
 
+  /// Number of times this item has been worn (used in outfit generation)
+  final int wearCount;
+
+  /// Date when item was moved to laundry (for auto-return timer)
+  final DateTime? laundryStart;
+
   /// Constructor for ClothingItem
   ClothingItem({
     required this.id,
@@ -34,6 +40,8 @@ class ClothingItem {
     required this.dateAdded,
     this.laundryUntil,
     this.imagePath,
+    this.wearCount = 0,
+    this.laundryStart,
   });
 
   /// Create a copy of this ClothingItem with optional field updates
@@ -46,6 +54,8 @@ class ClothingItem {
     DateTime? dateAdded,
     DateTime? laundryUntil,
     String? imagePath,
+    int? wearCount,
+    DateTime? laundryStart,
   }) {
     return ClothingItem(
       id: id ?? this.id,
@@ -56,6 +66,8 @@ class ClothingItem {
       dateAdded: dateAdded ?? this.dateAdded,
       laundryUntil: laundryUntil ?? this.laundryUntil,
       imagePath: imagePath ?? this.imagePath,
+      wearCount: wearCount ?? this.wearCount,
+      laundryStart: laundryStart ?? this.laundryStart,
     );
   }
 
@@ -70,6 +82,8 @@ class ClothingItem {
       'dateAdded': dateAdded.toIso8601String(),
       'laundryUntil': laundryUntil?.toIso8601String(),
       'imagePath': imagePath,
+      'wearCount': wearCount,
+      'laundryStart': laundryStart?.toIso8601String(),
     };
   }
 
@@ -86,6 +100,10 @@ class ClothingItem {
           ? DateTime.parse(json['laundryUntil'] as String)
           : null,
       imagePath: json['imagePath'] as String?,
+      wearCount: json['wearCount'] as int? ?? 0,
+      laundryStart: json['laundryStart'] != null
+          ? DateTime.parse(json['laundryStart'] as String)
+          : null,
     );
   }
 }
