@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:ootd_ai/models/outfit.dart';
 import 'package:ootd_ai/models/clothing_item.dart';
@@ -22,7 +23,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _loadHistory();
   }
 
-  /// Load outfit history
+  /// Load outfit history from service
   void _loadHistory() {
     setState(() {
       _outfitHistory = _outfitService.getAllOutfits();
@@ -78,57 +79,65 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Outfit Details',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 24),
-              _buildDetailRow(context, 'Date', _formatDate(outfit.date)),
-              const SizedBox(height: 16),
-              Text(
-                '👕 Top Wear',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              _buildItemDetail(context, shirt),
-              const SizedBox(height: 16),
-              Text(
-                '👖 Bottom Wear',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              _buildItemDetail(context, pant),
-              const SizedBox(height: 16),
-              Text(
-                '👟 Footwear',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              _buildItemDetail(context, footwear),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
+        return SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.only(
+              left: 24.0,
+              right: 24.0,
+              top: 24.0,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Outfit Details',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                _buildDetailRow(context, 'Date', _formatDate(outfit.date)),
+                const SizedBox(height: 16),
+                Text(
+                  '👕 Top Wear',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                _buildItemDetail(context, shirt),
+                const SizedBox(height: 16),
+                Text(
+                  '👖 Bottom Wear',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                _buildItemDetail(context, pant),
+                const SizedBox(height: 16),
+                Text(
+                  '👟 Footwear',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                _buildItemDetail(context, footwear),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -158,14 +167,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildItemDetail(BuildContext context, ClothingItem item) {
     return Row(
       children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: _getColorFromString(item.color),
+        if (item.imagePath != null && item.imagePath!.isNotEmpty)
+          ClipRRect(
             borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              File(item.imagePath!),
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: _getColorFromString(item.color),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                );
+              },
+            ),
+          )
+        else
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: _getColorFromString(item.color),
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -193,13 +223,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     child: Text(
                       item.category,
-                      style:
-                          Theme.of(context).textTheme.labelSmall?.copyWith(
-                                fontSize: 10,
-                                color:
-                                    Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontSize: 10,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -214,12 +242,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     child: Text(
                       item.color,
-                      style:
-                          Theme.of(context).textTheme.labelSmall?.copyWith(
-                                fontSize: 10,
-                                color: Colors.green,
-                                fontWeight: FontWeight.w500,
-                              ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontSize: 10,
+                            color: Colors.green,
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ),
                 ],
@@ -241,15 +268,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
         elevation: 0,
         centerTitle: true,
         actions: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Text(
-                '${_outfitHistory.length} outfits',
-                style: Theme.of(context).textTheme.bodyMedium,
+          if (_outfitHistory.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: Text(
+                  '${_outfitHistory.length}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
             ),
-          ),
         ],
       ),
       body: _buildBody(context, colorScheme),
@@ -310,7 +338,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(height: 32),
           FilledButton.icon(
             onPressed: () {
-              Navigator.pushNamed(context, '/');
+              Navigator.pushNamed(context, '/outfit');
             },
             icon: const Icon(Icons.checkroom),
             label: const Text('Go to Outfit'),
@@ -398,53 +426,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          shirt.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(fontSize: 10),
-                        ),
-                      ],
+                    child: Text(
+                      shirt.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(fontSize: 10),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          pant.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(fontSize: 10),
-                        ),
-                      ],
+                    child: Text(
+                      pant.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(fontSize: 10),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          footwear.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(fontSize: 10),
-                        ),
-                      ],
+                    child: Text(
+                      footwear.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(fontSize: 10),
                     ),
                   ),
                 ],

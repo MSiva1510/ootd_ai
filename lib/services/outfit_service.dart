@@ -15,7 +15,7 @@ class OutfitService {
   Outfit? _todaysOutfit;
 
   /// Store outfit history (in-memory only)
-  List<Outfit> _outfitHistory = [];
+  final List<Outfit> _outfitHistory = [];
 
   /// Random number generator for outfit selection
   late Random _random;

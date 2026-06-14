@@ -310,7 +310,7 @@ class _AddClothingScreenState extends State<AddClothingScreen> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
@@ -472,10 +472,10 @@ class _AddClothingScreenState extends State<AddClothingScreen> {
             height: 200,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: colorScheme.outline.withOpacity(0.2),
+                color: colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: Center(

@@ -44,118 +44,121 @@ class _ClosetScreenState extends State<ClosetScreen> {
     );
   }
 
-  /// Show item details
+  /// Show item details in bottom sheet
   void _showItemDetails(BuildContext context, ClothingItem item) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.name,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 16),
+        return SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.only(
+              left: 24.0,
+              right: 24.0,
+              top: 24.0,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 16),
 
-              // Image if available
-              if (item.imagePath != null && item.imagePath!.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(item.imagePath!),
-                    height: 250,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              else
-                Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                // Image if available
+                if (item.imagePath != null && item.imagePath!.isNotEmpty)
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.checkroom,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.outline,
+                    child: Image.file(
+                      File(item.imagePath!),
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return _buildPlaceholder(context);
+                      },
                     ),
-                  ),
+                  )
+                else
+                  _buildPlaceholder(context),
+
+                const SizedBox(height: 16),
+
+                // Details
+                _buildDetailRow(context, 'Category', item.category),
+                const SizedBox(height: 12),
+                _buildDetailRow(context, 'Color', item.color),
+                const SizedBox(height: 12),
+                _buildDetailRow(context, 'Status', item.status),
+                const SizedBox(height: 12),
+                _buildDetailRow(
+                  context,
+                  'Added',
+                  '${item.dateAdded.day}/${item.dateAdded.month}/${item.dateAdded.year}',
                 ),
 
-              const SizedBox(height: 16),
-
-              // Details
-              _buildDetailRow(
-                context,
-                'Category',
-                item.category,
-              ),
-              const SizedBox(height: 8),
-              _buildDetailRow(
-                context,
-                'Color',
-                item.color,
-              ),
-              const SizedBox(height: 8),
-              _buildDetailRow(
-                context,
-                'Status',
-                item.status,
-              ),
-              const SizedBox(height: 8),
-              _buildDetailRow(
-                context,
-                'Added',
-                '${item.dateAdded.day}/${item.dateAdded.month}/${item.dateAdded.year}',
-              ),
-
-              // Laundry status if in laundry
-              if (item.status == 'In Laundry' && item.laundryUntil != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: _buildDetailRow(
+                // Laundry status if in laundry
+                if (item.status == 'In Laundry' && item.laundryUntil != null) ...[
+                  const SizedBox(height: 12),
+                  _buildDetailRow(
                     context,
                     'Ready by',
                     '${item.laundryUntil!.day}/${item.laundryUntil!.month}/${item.laundryUntil!.year}',
                   ),
-                ),
+                ],
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Action button
-              if (item.status == 'Available')
+                // Action button
+                if (item.status == 'Available')
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _markAsWorn(item);
+                      },
+                      child: const Text('Mark as Worn'),
+                    ),
+                  ),
+
+                const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _markAsWorn(item);
-                    },
-                    child: const Text('Mark as Worn'),
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
                   ),
                 ),
-
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  /// Build placeholder widget
+  Widget _buildPlaceholder(BuildContext context) {
+    return Container(
+      height: 150,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.checkroom,
+          size: 64,
+          color: Theme.of(context).colorScheme.outline,
+        ),
+      ),
     );
   }
 
@@ -170,9 +173,14 @@ class _ClosetScreenState extends State<ClosetScreen> {
                 fontWeight: FontWeight.w500,
               ),
         ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium,
+        Flexible(
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.end,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
@@ -233,7 +241,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
       return _buildEmptyState(context, colorScheme);
     }
 
-    // Summary cards
+    // Summary counts
     final totalCount = _clothingService.getTotalCount();
     final availableCount = _clothingService.getAvailableCount();
     final laundryCount = _clothingService.getLaundryCount();
@@ -399,6 +407,15 @@ class _ClosetScreenState extends State<ClosetScreen> {
                     ? Image.file(
                         File(item.imagePath!),
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.checkroom,
+                              size: 48,
+                              color: colorScheme.outline,
+                            ),
+                          );
+                        },
                       )
                     : Center(
                         child: Icon(
@@ -412,74 +429,85 @@ class _ClosetScreenState extends State<ClosetScreen> {
 
             // Info section
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     item.name,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Text(
-                          item.category,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(
-                                fontSize: 9,
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Text(
+                            item.category,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  fontSize: 8,
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getColorFromString(item.color)
-                              .withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Text(
-                          item.color,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w500,
-                              ),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getColorFromString(item.color)
+                                .withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Text(
+                            item.color,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     item.status,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontSize: 8,
+                          fontSize: 7,
                           color: _getStatusColor(item.status),
                           fontWeight: FontWeight.w500,
                         ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

@@ -71,8 +71,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
             FilledButton(
               onPressed: () {
                 Navigator.pop(context);
-                // Navigate to closet to add more clothes
-                Navigator.pushNamed(context, '/');
+                Navigator.pushNamed(context, '/closet');
               },
               child: const Text('Go to Closet'),
             ),
@@ -283,6 +282,15 @@ class _OutfitScreenState extends State<OutfitScreen> {
                     ? Image.file(
                         File(item.imagePath!),
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.checkroom,
+                              size: 64,
+                              color: colorScheme.outline,
+                            ),
+                          );
+                        },
                       )
                     : Center(
                         child: Icon(
@@ -314,13 +322,13 @@ class _OutfitScreenState extends State<OutfitScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     item.category,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w500,
                         ),
                   ),
@@ -377,16 +385,11 @@ class _OutfitScreenState extends State<OutfitScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Generated earlier',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.outline,
-                          ),
-                    ),
-                  ],
+                Text(
+                  'Generated earlier',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.outline,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -449,6 +452,15 @@ class _OutfitScreenState extends State<OutfitScreen> {
                 ? Image.file(
                     File(item.imagePath!),
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.checkroom,
+                          size: 32,
+                          color: colorScheme.outline,
+                        ),
+                      );
+                    },
                   )
                 : Center(
                     child: Icon(

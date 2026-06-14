@@ -1,278 +1,294 @@
 import 'package:flutter/material.dart';
-import 'package:ootd_ai/config/theme/theme_controller.dart';
 import 'package:ootd_ai/services/clothing_service.dart';
 import 'package:ootd_ai/services/outfit_service.dart';
-import 'package:ootd_ai/services/laundry_service.dart';
-import 'package:ootd_ai/widgets/stat_card.dart';
-// ignore: unused_import
-import 'package:ootd_ai/models/clothing_item.dart';
 
-
+/// Dashboard screen showing overview and statistics
 class DashboardScreen extends StatefulWidget {
-  final ThemeController themeController;
-
-  const DashboardScreen({super.key, required this.themeController});
+  const DashboardScreen({Key? key}) : super(key: key);
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final ClothingService _clothingService = ClothingService();
-  final OutfitService _outfitService = OutfitService();
-  final LaundryService _laundryService = LaundryService();
+  late ClothingService _clothingService;
+  late OutfitService _outfitService;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use singleton instances
+    _clothingService = ClothingService();
+    _outfitService = OutfitService();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // Get live counts from services
+    final totalClothing = _clothingService.getTotalCount();
+    final availableClothing = _clothingService.getAvailableCount();
+    final laundryClothing = _clothingService.getLaundryCount();
+    final totalOutfits = _outfitService.getHistoryCount();
+    final currentOutfit = _outfitService.getTodaysOutfit();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('OOTD AI'),
-        centerTitle: false,
+        title: const Text('Dashboard'),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No new notifications')),
-              );
-            },
-          ),
-          PopupMenuButton<ThemeMode>(
-            icon: Icon(_themeIcon(widget.themeController.themeMode)),
-            tooltip: 'Theme',
-            onSelected: (mode) {
-              widget.themeController.setThemeMode(mode);
-            },
-            itemBuilder: (context) => [
-              _buildThemeMenuItem(
-                ThemeMode.light,
-                Icons.light_mode_outlined,
-                'Light',
-              ),
-              _buildThemeMenuItem(
-                ThemeMode.dark,
-                Icons.dark_mode_outlined,
-                'Dark',
-              ),
-              _buildThemeMenuItem(
-                ThemeMode.system,
-                Icons.brightness_auto_outlined,
-                'System',
-              ),
-            ],
-          ),
-        ],
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Welcome section
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    colorScheme.primary,
-                    colorScheme.primaryContainer,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Welcome back!',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Let\'s find you the perfect outfit today',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white70,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Generate outfit feature coming soon'),
-                        ),
-                      );
-                    },
-                    child: const Text('Generate Outfit'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Quick stats
             Text(
-              'Quick Stats',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              'Welcome to OOTD AI',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              children: [
-                StatCard(
-                  title: 'Clothing Items',
-                  value: _clothingService.getAllClothes().length.toString(),
-                  icon: Icons.checkroom,
-                ),
-                StatCard(
-                  title: 'Outfits',
-                  value: _outfitService.getAllOutfits().length.toString(),
-                  icon: Icons.style,
-                ),
-                StatCard(
-                  title: 'Laundry',
-                  value: _laundryService.getPendingItems().length.toString(),
-                  icon: Icons.local_laundry_service,
-                ),
-                StatCard(
-                  title: 'Favorites',
-                  value:
-                      _outfitService.getFavoriteOutfits().length.toString(),
-                  icon: Icons.favorite,
-                ),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              'Your personal outfit recommendation assistant',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.outline,
+                  ),
             ),
-            const SizedBox(height: 24),
 
-            // Recent outfits section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Recent Outfits',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('View all outfits in History tab'),
-                      ),
-                    );
-                  },
-                  child: const Text('View All'),
-                ),
-              ],
+            const SizedBox(height: 32),
+
+            // Closet overview
+            Text(
+              'Your Closet',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
             const SizedBox(height: 12),
-            if (_outfitService.getAllOutfits().isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.style_outlined,
-                        size: 48,
-                        color: colorScheme.outline,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No outfits yet',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.outline,
-                            ),
-                      ),
-                    ],
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    colorScheme,
+                    'Total Items',
+                    totalClothing.toString(),
+                    Colors.blue,
                   ),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    colorScheme,
+                    'Available',
+                    availableClothing.toString(),
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    colorScheme,
+                    'In Laundry',
+                    laundryClothing.toString(),
+                    Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
+
+            // Outfit overview
+            Text(
+              'Outfits',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            _buildOutfitCard(
+              context,
+              colorScheme,
+              'Total Generated',
+              totalOutfits.toString(),
+              Icons.checkroom,
+            ),
+
+            const SizedBox(height: 12),
+
+            if (currentOutfit != null)
+              _buildOutfitCard(
+                context,
+                colorScheme,
+                'Today\'s Outfit',
+                'Ready',
+                Icons.done,
               )
             else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount:
-                    _outfitService.getAllOutfits().length.clamp(0, 3),
-                itemBuilder: (context, index) {
-                  final outfit = _outfitService.getAllOutfits()[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.style,
-                        color: colorScheme.primary,
-                      ),
-                      title: Text(outfit.title),
-                      subtitle: Text(
-                        outfit.occasion ?? 'No occasion',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: Icon(
-                        outfit.isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: outfit.isFavorite ? Colors.red : null,
-                      ),
-                    ),
-                  );
-                },
+              _buildOutfitCard(
+                context,
+                colorScheme,
+                'Today\'s Outfit',
+                'Generate',
+                Icons.add,
               ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 32),
+
+            // Quick actions
+            Text(
+              'Quick Actions',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/closet');
+                    },
+                    icon: const Icon(Icons.checkroom),
+                    label: const Text('Closet'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/outfit');
+                    },
+                    icon: const Icon(Icons.style),
+                    label: const Text('Outfit'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/history');
+                    },
+                    icon: const Icon(Icons.history),
+                    label: const Text('History'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/laundry');
+                    },
+                    icon: const Icon(Icons.local_laundry_service),
+                    label: const Text('Laundry'),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  /// Icon representing the current theme mode
-  IconData _themeIcon(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return Icons.light_mode_outlined;
-      case ThemeMode.dark:
-        return Icons.dark_mode_outlined;
-      case ThemeMode.system:
-        return Icons.brightness_auto_outlined;
-    }
+  /// Build stat card
+  Widget _buildStatCard(
+    BuildContext context,
+    ColorScheme colorScheme,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  /// Build a theme selection menu item with a check mark for the active mode
-  PopupMenuItem<ThemeMode> _buildThemeMenuItem(
-    ThemeMode mode,
-    IconData icon,
+  /// Build outfit card
+  Widget _buildOutfitCard(
+    BuildContext context,
+    ColorScheme colorScheme,
     String label,
+    String status,
+    IconData icon,
   ) {
-    final isSelected = widget.themeController.themeMode == mode;
-    return PopupMenuItem<ThemeMode>(
-      value: mode,
-      child: Row(
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 12),
-          Text(label),
-          const Spacer(),
-          if (isSelected)
-            Icon(
-              Icons.check,
-              size: 18,
-              color: Theme.of(context).colorScheme.primary,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: colorScheme.primary,
+                size: 24,
+              ),
             ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    status,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.outline,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward,
+              color: colorScheme.outline,
+            ),
+          ],
+        ),
       ),
     );
   }
